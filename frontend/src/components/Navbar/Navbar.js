@@ -146,6 +146,14 @@ const Navbar = () => {
               <li
                 key={index}
                 className={`navbar-item ${isDisabled ? "disabled" : ""}`}
+                onClick={(e) => {
+                  if (isDisabled) {
+                    e.preventDefault();
+                    return;
+                  } else {
+                    navigate(`/page/${item.toLowerCase()}`);
+                  }
+                }}
               >
                 <a className="navbar-link">{item}</a>
                 {isDisabled && (

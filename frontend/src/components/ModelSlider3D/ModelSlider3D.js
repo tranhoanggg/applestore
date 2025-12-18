@@ -42,7 +42,7 @@ const ModelSlider3D = () => {
       {/* TITLE */}
       <div className="text-header">
         <h2 className="slider-title">
-          Take a look at our newest iPhone 17 models
+          Cùng ngắm nhìn phiên bản iPhone 17 mới nhất
         </h2>
       </div>
 

@@ -1283,6 +1283,18 @@ app.put("/bill/cancel/:billId", async (req, res) => {
   }
 });
 
+app.get("/details/:name", (req, res) => {
+  const name = req.params.name;
+
+  db.query("SELECT * FROM details where name = ?", [name], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Lỗi khi lấy dữ liệu details");
+    }
+    res.json(results);
+  });
+});
+
 const PORT = 5000;
 app.listen(PORT, () => {
   console.log("Backend chạy tại http://localhost:5000");

@@ -1,0 +1,120 @@
+.page-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 1s ease, transform 1s ease;
+}
+
+.watchpage-container {
+  width: 90%;
+  margin: 60px auto;
+}
+
+.watchpage-title {
+  width: 596px;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: 0.007em;
+  margin-bottom: 30px;
+  background: linear-gradient(90deg, #1f8cff, #6b6bb9, #d8754f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.watchpage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+}
+
+.watchpage-card {
+  background: #fff;
+  border-radius: 28px;
+  padding: 32px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  position: relative;
+  transition: 0.25s ease;
+}
+
+.watchpage-card:hover {
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.1);
+}
+
+.watchpage-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.watchpage-name {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.watchpage-image {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.watchpage-image img {
+  width: 70%;
+}
+
+.watchpage-colors {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+.color-dot.active {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+.watchpage-price {
+  font-size: 18px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.watchpage-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn.info {
+  background: #191970;
+  color: #fff;
+}
+
+.btn.buy {
+  background: #ff6600;
+  color: #fff;
+}
+
+.btn:hover {
+  transform: scale(1.05);
+}

@@ -13,6 +13,14 @@ import Account from "./components/Account/Account";
 import PasswordReset from "./components/PasswordReset/PasswordReset";
 import CheckoutSummary from "./components/CheckoutSummary/CheckoutSummary";
 import Bill from "./components/Bill/Bill";
+import IphonePage from "./components/IphonePage/IphonePage";
+import IpadPage from "./components/IpadPage/IpadPage";
+import MacPage from "./components/MacPage/MacPage";
+import WatchPage from "./components/WatchPage/WatchPage";
+import IphoneDetail from "./components/IphoneDetail/IphoneDetail";
+import IpadDetail from "./components/IpadDetail/IpadDetail";
+import MacDetail from "./components/MacDetail/MacDetail";
+import WatchDetail from "./components/WatchDetail/WatchDetail";
 
 function AppContent() {
   return (
@@ -30,6 +38,14 @@ function AppContent() {
         <Route path="/password-reset" element={<PasswordReset />} />
         <Route path="/cart" element={<CheckoutSummary />} />
         <Route path="/bill" element={<Bill />} />
+        <Route path="/page/iphone" element={<IphonePage />} />
+        <Route path="/page/ipad" element={<IpadPage />} />
+        <Route path="/page/mac" element={<MacPage />} />
+        <Route path="/page/watch" element={<WatchPage />} />
+        <Route path="/iphone/:name" element={<IphoneDetail />} />
+        <Route path="/ipad/:name" element={<IpadDetail />} />
+        <Route path="/mac/:name" element={<MacDetail />} />
+        <Route path="/watch/:name" element={<WatchDetail />} />
       </Routes>
       <Footer />
     </>
