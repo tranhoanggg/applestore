@@ -1,0 +1,228 @@
+.maclist-container {
+  position: relative;
+  width: 90%;
+  margin: 24px auto 40px auto;
+  border-radius: 12px;
+  padding: 30px;
+  overflow: visible;
+}
+
+.maclist-title {
+  width: 526px;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: 0.007em;
+  margin-bottom: 20px;
+  background: linear-gradient(90deg, #1f8cff, #6b6bb9, #d8754f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* viewport */
+.mac-slider-viewport {
+  position: relative;
+  overflow: hidden;
+  margin-top: 8px;
+  border-radius: 28px;
+  padding: 24px 0;
+}
+
+/* track */
+.mac-track {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  transition: transform 0.45s cubic-bezier(0.22, 0.9, 0.18, 1);
+  will-change: transform;
+}
+
+/* Each card will have width set inline (calculated in JS) */
+.mac-card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+
+  background: #fff;
+  border-radius: 28px;
+  padding: 32px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: 0.25s ease;
+}
+
+.mac-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.mac-poster-attach {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+}
+
+/* poster and hover dim */
+.mac-card .poster-wrapper {
+  position: relative;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.mac-poster {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+
+.mac-poster-img {
+  width: 70%;
+  display: block;
+}
+
+/* Dots */
+.color-dot-group {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: 0.25s ease;
+  border: 2px solid transparent;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(0, 0, 0, 0.15);
+  transition: 0.25s ease;
+}
+
+.color-dot:hover {
+  transform: scale(1.15);
+}
+
+.color-dot.active {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Price */
+.mac-price {
+  font-size: 18px;
+  margin-bottom: 24px;
+}
+
+/* buttons */
+.maclist-btn-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.maclist.btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.maclist.btn.information,
+.maclist.btn.buy {
+  background: rgba(255, 102, 0, 0.9);
+  color: white;
+  padding: 11px 15px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  transform: scale(0.9);
+}
+
+.maclist.btn.buy:hover {
+  background: rgba(255, 102, 0, 1);
+  transform: scale(1);
+}
+
+.maclist.btn.information {
+  background: rgba(25, 25, 112, 0.9);
+}
+
+.maclist.btn.information:hover {
+  background: rgba(25, 25, 112, 1);
+  transform: scale(1);
+}
+
+.more-text,
+.buy-text {
+  display: inline-block;
+  line-height: 1;
+}
+
+/* title/type */
+.mac-name {
+  margin-bottom: 24px;
+  font-size: 28px;
+  font-weight: 700;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #000;
+}
+
+/* arrows */
+.maclist.arrow {
+  position: absolute;
+  border-radius: 50%;
+  top: 50%;
+  background: rgba(226, 226, 229, 0.8);
+  color: #000;
+  border: none;
+  font-size: 24px;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.maclist.arrow svg {
+  fill: rgba(0, 0, 0, 0.6);
+}
+
+.maclist.arrow.prev {
+  left: -24px;
+}
+
+.maclist.arrow.prev svg {
+  margin-right: 2px;
+}
+
+.maclist.arrow.next {
+  right: -24px;
+}
+
+.maclist.arrow.next svg {
+  margin-left: 2px;
+}
+
+.maclist.arrow:hover {
+  transform: scale(1.1);
+}
+
+.maclist.arrow:hover svg {
+  fill: rgba(0, 0, 0, 0.8);
+}

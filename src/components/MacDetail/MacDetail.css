@@ -1,0 +1,130 @@
+.mac-detail-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+  animation: fadeInOverlay 0.6s ease forwards;
+}
+
+.mac-detail-overlay.fade-out {
+  animation: fadeOutOverlay 0.4s ease forwards;
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOutOverlay {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+.mac-detail-modal {
+  width: 90%;
+  max-width: 1200px;
+  background: #fff;
+  border-radius: 28px;
+  padding: 40px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.detail-left {
+  padding-top: 126px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.detail-image {
+  width: 60%;
+}
+
+.nav-btn {
+  position: absolute;
+  top: 280px;
+  background: #eee;
+  border: none;
+  border-radius: 50%;
+  padding: 0 7px 5px;
+  cursor: pointer;
+}
+
+.nav-btn.left {
+  left: 82px;
+}
+
+.nav-btn.right {
+  right: 82px;
+}
+
+.detail-dots {
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+}
+
+.detail-right h1 {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+.badge-new {
+  color: #ff6600;
+  font-weight: 700;
+}
+
+.price-container {
+  display: flex;
+  align-items: center;
+}
+
+.price-range {
+  margin-bottom: 16px;
+}
+
+.buy-btn {
+  background: #0071e3;
+  color: white;
+  border: none;
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+
+.detail-list {
+  height: 400px;
+  overflow-y: scroll;
+}
+
+.detail-list p {
+  padding: 14px 0;
+  border-top: 1px solid #ddd;
+  font-size: 15px;
+  line-height: 1.6;
+}

@@ -1,0 +1,243 @@
+.buy-container {
+  padding: 56px 40px 40px 40px;
+}
+
+.buy-title {
+  margin-left: 24px;
+  margin-bottom: 44px;
+}
+
+.buy-content {
+  display: flex;
+  gap: 120px;
+}
+
+.buy-left {
+  flex: 1;
+  margin-left: 120px;
+}
+
+.buy-image-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  border-radius: 24px;
+  background-color: #fff;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.buy-image {
+  width: 320px;
+}
+
+.buy-right {
+  flex: 1.2;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.color-list {
+  width: 540px;
+}
+
+.color-list {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.color-item {
+  padding: 10px 16px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-item.active {
+  border-color: blue;
+  background: rgba(0, 119, 255, 0.1);
+}
+
+.color-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid #aaa;
+}
+
+.price-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price-content {
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.buy-product.add-to-cart-btn {
+  border-radius: 12px;
+  font-size: 18px;
+  padding: 12px 24px;
+  color: #fff;
+  outline: none;
+  border: none;
+  background-color: rgba(41, 78, 226, 0.9);
+}
+
+.buy-product.add-to-cart-btn:hover {
+  background-color: rgba(41, 78, 226, 1);
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* ===================== */
+/* FORM NGƯỜI NHẬN */
+/* ===================== */
+
+.receiver-title,
+.payment-title {
+  margin-top: 30px;
+  margin-bottom: 12px;
+}
+
+.receiver-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 70%;
+}
+
+.input-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-block label {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.input-block input {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+/* ===================== */
+/* PAYMENT METHODS */
+/* ===================== */
+
+.payment-methods {
+  margin-bottom: 15px;
+}
+
+.radio-item {
+  display: flex;
+  margin-bottom: 8px;
+  cursor: pointer;
+  gap: 12px;
+}
+
+.payment-location input {
+  margin-top: -22px;
+}
+
+.bank-select {
+  padding: 10px;
+  width: 200px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  display: block;
+}
+
+/* ===================== */
+/* QR SECTION */
+/* ===================== */
+
+.qr-section {
+  margin-top: 84px;
+  text-align: center;
+}
+
+.qr-image {
+  width: 200px;
+  margin-top: 10px;
+}
+
+.qr-info {
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* ===================== */
+/* PAYMENT BUTTON */
+/* ===================== */
+
+.submit-btn {
+  margin-top: 25px;
+  padding: 12px 20px;
+  background-color: rgba(41, 78, 226, 0.9);
+  outline: none;
+  border: none;
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-left: 328px;
+}
+
+.submit-btn:hover {
+  background-color: rgba(41, 78, 226, 1);
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.8);
+}
+
+.submit-btn.disabled {
+  background: gray;
+  cursor: not-allowed;
+}
+
+.submit-btn.disabled:hover {
+  background: gray;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ===================== */
+/* EXPIRED BOX */
+/* ===================== */
+
+.expired-box {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid red;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.expired-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.retry-pay {
+  padding: 10px 16px;
+  background: orange;
+  color: white;
+  border-radius: 8px;
+}
+
+.back-home {
+  padding: 10px 16px;
+  background: gray;
+  color: white;
+  border-radius: 8px;
+}
