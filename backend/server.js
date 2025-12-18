@@ -1,0 +1,1289 @@
+const express = require("express");
+const cors = require("cors");
+const db = require("./db");
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+app.get("/iphones", (req, res) => {
+  db.query("SELECT * FROM iphone", (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Lỗi khi lấy dữ liệu iphone");
+    }
+    res.json(results);
+  });
+});
+
+app.get("/iphone/:id", (req, res) => {
+  const id = req.params.id;
+
+  db.query("SELECT * FROM iphone where id = ?", [id], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Lỗi khi lấy dữ liệu iphone theo id");
+    }
+    res.json(results);
+  });
+});
+
+app.get("/iphones/buy/:name", (req, res) => {
+  const iphoneName = req.params.name;
+
+  db.query(
+    "SELECT * FROM iphone where name = ?",
+    [iphoneName],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Lỗi khi lấy dữ liệu mua iphone");
+      }
+      res.json(results);
+    }
+  );
+});
+
+app.get("/ipads", (req, res) => {
+  db.query("SELECT * FROM ipad", (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Lỗi khi lấy dữ liệu ipad");
+    }
+    res.json(results);
+  });
+});
+
+app.get("/ipads/buy/:name", (req, res) => {
+  const ipadName = req.params.name;
+
+  db.query("SELECT * FROM ipad where name = ?", [ipadName], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Lỗi khi lấy dữ liệu mua ipad");
+    }
+    res.json(results);
+  });
+});
+
+app.get("/ipad/:id", (req, res) => {
+  const id = req.params.id;
+
+  db.query("SELECT * FROM ipad where id = ?", [id], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Lỗi khi lấy dữ liệu ipad theo id");
+    }
+    res.json(results);
+  });
+});
+
+app.get("/macs", (req, res) => {
+  db.query("SELECT * FROM mac", (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Lỗi khi lấy dữ liệu mac");
+    }
+    res.json(results);
+  });
+});
+
+app.get("/macs/buy/:name", (req, res) => {
+  const macName = req.params.name;
+
+  db.query("SELECT * FROM mac where name = ?", [macName], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Lỗi khi lấy dữ liệu mua mac");
+    }
+    res.json(results);
+  });
+});
+
+app.get("/mac/:id", (req, res) => {
+  const id = req.params.id;
+
+  db.query("SELECT * FROM mac where id = ?", [id], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Lỗi khi lấy dữ liệu mac theo id");
+    }
+    res.json(results);
+  });
+});
+
+app.get("/watchs", (req, res) => {
+  db.query("SELECT * FROM watch", (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Lỗi khi lấy dữ liệu watch");
+    }
+    res.json(results);
+  });
+});
+
+app.get("/watchs/buy/:name", (req, res) => {
+  const watchName = req.params.name;
+
+  db.query(
+    "SELECT * FROM watch where name = ?",
+    [watchName],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Lỗi khi lấy dữ liệu mua watch");
+      }
+      res.json(results);
+    }
+  );
+});
+
+app.get("/watch/:id", (req, res) => {
+  const id = req.params.id;
+
+  db.query("SELECT * FROM watch where id = ?", [id], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Lỗi khi lấy dữ liệu watch theo id");
+    }
+    res.json(results);
+  });
+});
+
+app.get("/client_account", (req, res) => {
+  db.query("SELECT * FROM client_account", (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Lỗi khi lấy dữ liệu client_account");
+    }
+    res.json(results);
+  });
+});
+
+app.get("/client_account/:id", (req, res) => {
+  const id = req.params.id;
+
+  db.query(
+    "SELECT * FROM client_account where id = ?",
+    [id],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res
+          .status(500)
+          .send("Lỗi khi lấy dữ liệu client_account theo ID");
+      }
+      res.json(results);
+    }
+  );
+});
+
+app.put("/client_account/update", (req, res) => {
+  const { id, name, birthday, email, phone } = req.body;
+
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      message: "Thiếu id người dùng",
+    });
+  }
+
+  const sql = `
+    UPDATE client_account
+    SET 
+      name = ?,
+      birthday = ?,
+      email = ?,
+      phone = ?
+    WHERE id = ?
+  `;
+
+  db.query(sql, [name, birthday, email, phone, id], (err, result) => {
+    if (err) {
+      console.error("Lỗi khi cập nhật người dùng:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi khi cập nhật thông tin người dùng",
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Cập nhật thông tin thành công",
+    });
+  });
+});
+
+app.put("/client_account/password-reset", (req, res) => {
+  const { id, new_password } = req.body;
+
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      message: "Thiếu id người dùng",
+    });
+  }
+
+  const sql = `
+    UPDATE client_account
+    SET 
+      password = ?
+    WHERE id = ?
+  `;
+
+  db.query(sql, [new_password, id], (err, result) => {
+    if (err) {
+      console.error("Lỗi khi cập nhật mật khẩu người dùng:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi khi cập nhật mật khẩu người dùng",
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Cập nhật mật khẩu thành công",
+    });
+  });
+});
+
+app.post("/signup", (req, res) => {
+  const { name, birthday, email, phone, password } = req.body;
+
+  const sql = `
+    INSERT INTO client_account (name, birthday, email, phone, password)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+
+  db.query(sql, [name, birthday, email, phone, password], (err, result) => {
+    if (err) {
+      console.error("Lỗi khi thêm người dùng:", err);
+      return res.status(500).send("Lỗi khi tạo tài khoản người dùng");
+    }
+
+    res.json({
+      success: true,
+      message: "Tạo tài khoản thành công!",
+      userId: result.insertId,
+    });
+  });
+});
+
+app.post("/iphones/pay", (req, res) => {
+  const {
+    user_id,
+    name,
+    phone,
+    product_id,
+    product_type,
+    color,
+    capacity,
+    address_detail,
+    commune,
+    district,
+    city,
+    date,
+    payment_method,
+    bank,
+    payment_status,
+  } = req.body;
+
+  db.beginTransaction((err) => {
+    if (err) {
+      console.error("Begin transaction error", err);
+      return res.status(500).json({ success: false });
+    }
+
+    const updateQuantitySql = `
+      UPDATE iphone
+      SET quantity = quantity - 1
+      WHERE id = ? AND quantity > 0
+    `;
+
+    db.query(updateQuantitySql, [product_id], (err, result) => {
+      if (err || result.affectedRows === 0) {
+        return db.rollback(() => {
+          console.error("Không đủ hàng hoặc lỗi update quantity", err);
+          res.status(400).json({
+            success: false,
+            message: "Sản phẩm đã hết hàng",
+          });
+        });
+      }
+
+      const insertBillSql = `
+        INSERT INTO bill (
+          user_id, name, phone, product_id, product_type, color, capacity,
+          address_detail, commune, district, city, date,
+          payment_method, bank, payment_status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      db.query(
+        insertBillSql,
+        [
+          user_id,
+          name,
+          phone,
+          product_id,
+          product_type,
+          color,
+          capacity,
+          address_detail,
+          commune,
+          district,
+          city,
+          date,
+          payment_method,
+          bank,
+          payment_status,
+        ],
+        (err) => {
+          if (err) {
+            return db.rollback(() => {
+              console.error("Insert bill error", err);
+              res.status(500).json({
+                success: false,
+                message: "Không thể tạo đơn hàng",
+              });
+            });
+          }
+
+          db.commit((err) => {
+            if (err) {
+              return db.rollback(() => {
+                console.error("Commit error", err);
+                res.status(500).json({ success: false });
+              });
+            }
+
+            res.json({
+              success: true,
+            });
+          });
+        }
+      );
+    });
+  });
+});
+
+app.post("/ipads/pay", (req, res) => {
+  const {
+    user_id,
+    name,
+    phone,
+    product_id,
+    product_type,
+    color,
+    capacity,
+    address_detail,
+    commune,
+    district,
+    city,
+    date,
+    payment_method,
+    bank,
+    payment_status,
+  } = req.body;
+
+  db.beginTransaction((err) => {
+    if (err) {
+      console.error("Begin transaction error", err);
+      return res.status(500).json({ success: false });
+    }
+
+    const updateQuantitySql = `
+      UPDATE ipad
+      SET quantity = quantity - 1
+      WHERE id = ? AND quantity > 0
+    `;
+
+    db.query(updateQuantitySql, [product_id], (err, result) => {
+      if (err || result.affectedRows === 0) {
+        return db.rollback(() => {
+          console.error("Không đủ hàng hoặc lỗi update quantity", err);
+          res.status(400).json({
+            success: false,
+            message: "Sản phẩm đã hết hàng",
+          });
+        });
+      }
+
+      const insertBillSql = `
+        INSERT INTO bill (
+          user_id, name, phone, product_id, product_type, color, capacity,
+          address_detail, commune, district, city, date,
+          payment_method, bank, payment_status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      db.query(
+        insertBillSql,
+        [
+          user_id,
+          name,
+          phone,
+          product_id,
+          product_type,
+          color,
+          capacity,
+          address_detail,
+          commune,
+          district,
+          city,
+          date,
+          payment_method,
+          bank,
+          payment_status,
+        ],
+        (err) => {
+          if (err) {
+            return db.rollback(() => {
+              console.error("Insert bill error", err);
+              res.status(500).json({
+                success: false,
+                message: "Không thể tạo đơn hàng",
+              });
+            });
+          }
+
+          db.commit((err) => {
+            if (err) {
+              return db.rollback(() => {
+                console.error("Commit error", err);
+                res.status(500).json({ success: false });
+              });
+            }
+
+            res.json({
+              success: true,
+            });
+          });
+        }
+      );
+    });
+  });
+});
+
+app.post("/macs/pay", (req, res) => {
+  const {
+    user_id,
+    name,
+    phone,
+    product_id,
+    product_type,
+    color,
+    ram,
+    rom,
+    address_detail,
+    commune,
+    district,
+    city,
+    date,
+    payment_method,
+    bank,
+    payment_status,
+  } = req.body;
+
+  db.beginTransaction((err) => {
+    if (err) {
+      console.error("Begin transaction error", err);
+      return res.status(500).json({ success: false });
+    }
+
+    const updateQuantitySql = `
+      UPDATE mac
+      SET quantity = quantity - 1
+      WHERE id = ? AND quantity > 0
+    `;
+
+    db.query(updateQuantitySql, [product_id], (err, result) => {
+      if (err || result.affectedRows === 0) {
+        return db.rollback(() => {
+          console.error("Không đủ hàng hoặc lỗi update quantity", err);
+          res.status(400).json({
+            success: false,
+            message: "Sản phẩm đã hết hàng",
+          });
+        });
+      }
+
+      const insertBillSql = `
+        INSERT INTO bill (
+          user_id, name, phone, product_id, product_type, color, ram, rom,
+          address_detail, commune, district, city, date,
+          payment_method, bank, payment_status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      db.query(
+        insertBillSql,
+        [
+          user_id,
+          name,
+          phone,
+          product_id,
+          product_type,
+          color,
+          ram,
+          rom,
+          address_detail,
+          commune,
+          district,
+          city,
+          date,
+          payment_method,
+          bank,
+          payment_status,
+        ],
+        (err) => {
+          if (err) {
+            return db.rollback(() => {
+              console.error("Insert bill error", err);
+              res.status(500).json({
+                success: false,
+                message: "Không thể tạo đơn hàng",
+              });
+            });
+          }
+
+          db.commit((err) => {
+            if (err) {
+              return db.rollback(() => {
+                console.error("Commit error", err);
+                res.status(500).json({ success: false });
+              });
+            }
+
+            res.json({
+              success: true,
+            });
+          });
+        }
+      );
+    });
+  });
+});
+
+app.post("/watchs/pay", (req, res) => {
+  const {
+    user_id,
+    name,
+    phone,
+    product_id,
+    product_type,
+    color,
+    address_detail,
+    commune,
+    district,
+    city,
+    date,
+    payment_method,
+    bank,
+    payment_status,
+  } = req.body;
+
+  db.beginTransaction((err) => {
+    if (err) {
+      console.error("Begin transaction error", err);
+      return res.status(500).json({ success: false });
+    }
+
+    const updateQuantitySql = `
+      UPDATE watch
+      SET quantity = quantity - 1
+      WHERE id = ? AND quantity > 0
+    `;
+
+    db.query(updateQuantitySql, [product_id], (err, result) => {
+      if (err || result.affectedRows === 0) {
+        return db.rollback(() => {
+          console.error("Không đủ hàng hoặc lỗi update quantity", err);
+          res.status(400).json({
+            success: false,
+            message: "Sản phẩm đã hết hàng",
+          });
+        });
+      }
+
+      const insertBillSql = `
+        INSERT INTO bill (
+          user_id, name, phone, product_id, product_type, color, ram, rom,
+          address_detail, commune, district, city, date,
+          payment_method, bank, payment_status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      db.query(
+        insertBillSql,
+        [
+          user_id,
+          name,
+          phone,
+          product_id,
+          product_type,
+          color,
+          address_detail,
+          commune,
+          district,
+          city,
+          date,
+          payment_method,
+          bank,
+          payment_status,
+        ],
+        (err) => {
+          if (err) {
+            return db.rollback(() => {
+              console.error("Insert bill error", err);
+              res.status(500).json({
+                success: false,
+                message: "Không thể tạo đơn hàng",
+              });
+            });
+          }
+
+          db.commit((err) => {
+            if (err) {
+              return db.rollback(() => {
+                console.error("Commit error", err);
+                res.status(500).json({ success: false });
+              });
+            }
+
+            res.json({
+              success: true,
+            });
+          });
+        }
+      );
+    });
+  });
+});
+
+app.post("/add_to_cart", (req, res) => {
+  const { user_id, product_id, type } = req.body;
+
+  if (!user_id || !product_id || !type) {
+    return res.status(400).json({ success: false, message: "Thiếu dữ liệu" });
+  }
+
+  // 1️⃣ Kiểm tra sản phẩm đã có trong giỏ chưa
+  const checkSql = `
+    SELECT id, quantity
+    FROM cart
+    WHERE user_id = ? AND product_id = ? AND type = ?
+  `;
+
+  db.query(checkSql, [user_id, product_id, type], (err, results) => {
+    if (err) {
+      console.error("Lỗi check cart", err);
+      return res.status(500).json({ success: false });
+    }
+
+    if (results.length > 0) {
+      const updateSql = `
+        UPDATE cart
+        SET quantity = quantity + 1
+        WHERE id = ?
+      `;
+
+      db.query(updateSql, [results[0].id], (err) => {
+        if (err) {
+          console.error("Lỗi update cart", err);
+          return res.status(500).json({ success: false });
+        }
+
+        return res.json({
+          success: true,
+          action: "updated",
+        });
+      });
+    } else {
+      const insertSql = `
+        INSERT INTO cart (user_id, product_id, type, quantity)
+        VALUES (?, ?, ?, 1)
+      `;
+
+      db.query(insertSql, [user_id, product_id, type], (err) => {
+        if (err) {
+          console.error("Lỗi insert cart", err);
+          return res.status(500).json({ success: false });
+        }
+
+        return res.json({
+          success: true,
+          action: "inserted",
+        });
+      });
+    }
+  });
+});
+
+app.get("/cart/:id", (req, res) => {
+  const user_id = req.params.id;
+
+  db.query(
+    "SELECT * FROM cart where user_id = ?",
+    [user_id],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Lỗi khi lấy dữ liệu cart theo ID");
+      }
+      res.json(results);
+    }
+  );
+});
+
+app.put("/cart/update-quantity", (req, res) => {
+  const { user_id, product_id, type, action } = req.body;
+
+  if (!user_id || !product_id || !type || !action) {
+    return res.status(400).json({
+      success: false,
+      message: "Thiếu dữ liệu cần thiết",
+    });
+  }
+
+  let sql = "";
+
+  if (action === "increase") {
+    sql = `
+      UPDATE cart
+      SET quantity = quantity + 1
+      WHERE user_id = ? AND product_id = ? AND type = ?
+    `;
+  } else if (action === "decrease") {
+    sql = `
+      UPDATE cart
+      SET quantity = quantity - 1
+      WHERE user_id = ? AND product_id = ? AND type = ? AND quantity > 1
+    `;
+  } else {
+    return res.status(400).json({
+      success: false,
+      message: "Action không hợp lệ",
+    });
+  }
+
+  db.query(sql, [user_id, product_id, type], (err, result) => {
+    if (err) {
+      console.error("Lỗi update quantity", err);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi server",
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.json({
+        success: false,
+        message: "Không thể cập nhật số lượng",
+      });
+    }
+
+    res.json({
+      success: true,
+    });
+  });
+});
+
+app.post("/cart/pay", (req, res) => {
+  const {
+    user_id,
+    name,
+    phone,
+    payment_method,
+    bank,
+    payment_status,
+    address_detail,
+    commune,
+    district,
+    city,
+    date,
+    cartItems,
+  } = req.body;
+
+  if (!user_id || !cartItems?.length) {
+    return res.status(400).json({
+      success: false,
+      message: "Thiếu dữ liệu thanh toán",
+    });
+  }
+
+  const TABLE_MAP = {
+    Iphone: "iphone",
+    Ipad: "ipad",
+    Mac: "mac",
+    Watch: "watch",
+  };
+
+  db.beginTransaction((err) => {
+    if (err) {
+      console.error("Begin transaction error", err);
+      return res.status(500).json({ success: false });
+    }
+
+    /* ===== 1. INSERT BILL ===== */
+    const insertBillSql = `
+      INSERT INTO bill (
+        user_id,
+        name,
+        phone,
+        product_type,
+        color,
+        capacity,
+        ram,
+        rom,
+        address_detail,
+        commune,
+        district,
+        city,
+        date,
+        payment_method,
+        bank,
+        payment_status
+      )
+      VALUES (?, ?, ?, '', '', '', '', '', ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(
+      insertBillSql,
+      [
+        user_id,
+        name,
+        phone,
+        address_detail,
+        commune,
+        district,
+        city,
+        date,
+        payment_method,
+        bank,
+        payment_status,
+      ],
+      (err, billResult) => {
+        if (err) {
+          return db.rollback(() => {
+            console.error("Insert bill error", err);
+            res.status(500).json({ success: false });
+          });
+        }
+
+        const bill_id = billResult.insertId;
+
+        /* ===== 2. TRỪ KHO TỪNG SẢN PHẨM ===== */
+        const deductStock = (index = 0) => {
+          if (index >= cartItems.length) {
+            return insertBillDetail();
+          }
+
+          const item = cartItems[index];
+          const table = TABLE_MAP[item.type];
+
+          if (!table) {
+            return db.rollback(() => {
+              res.status(400).json({
+                success: false,
+                message: "Loại sản phẩm không hợp lệ",
+              });
+            });
+          }
+
+          const updateStockSql = `
+            UPDATE ${table}
+            SET quantity = quantity - ?
+            WHERE id = ? AND quantity >= ?
+          `;
+
+          db.query(
+            updateStockSql,
+            [item.quantity, item.product_id, item.quantity],
+            (err, result) => {
+              if (err || result.affectedRows === 0) {
+                return db.rollback(() => {
+                  res.status(400).json({
+                    success: false,
+                    message: "Sản phẩm không đủ hàng",
+                  });
+                });
+              }
+
+              deductStock(index + 1);
+            }
+          );
+        };
+
+        /* ===== 3. INSERT BILL_DETAIL ===== */
+        const insertBillDetail = () => {
+          const insertDetailSql = `
+            INSERT INTO bill_detail (bill_id, product_id, quantity, type)
+            VALUES ?
+          `;
+
+          const values = cartItems.map((item) => [
+            bill_id,
+            item.product_id,
+            item.quantity,
+            item.type,
+          ]);
+
+          db.query(insertDetailSql, [values], (err) => {
+            if (err) {
+              return db.rollback(() => {
+                console.error("Insert bill_detail error", err);
+                res.status(500).json({ success: false });
+              });
+            }
+
+            deleteCart();
+          });
+        };
+
+        /* ===== 4. DELETE CART ===== */
+        const deleteCart = () => {
+          db.query("DELETE FROM cart WHERE user_id = ?", [user_id], (err) => {
+            if (err) {
+              return db.rollback(() => {
+                console.error("Delete cart error", err);
+                res.status(500).json({ success: false });
+              });
+            }
+
+            commitTransaction();
+          });
+        };
+
+        /* ===== 5. COMMIT ===== */
+        const commitTransaction = () => {
+          db.commit((err) => {
+            if (err) {
+              return db.rollback(() => {
+                console.error("Commit error", err);
+                res.status(500).json({ success: false });
+              });
+            }
+
+            res.json({
+              success: true,
+              bill_id,
+            });
+          });
+        };
+
+        deductStock(); // START
+      }
+    );
+  });
+});
+
+app.put("/cart/delete-item", (req, res) => {
+  const { user_id, product_id, type } = req.body;
+
+  if (!user_id || !product_id || !type) {
+    return res.status(400).json({
+      success: false,
+      message: "Thiếu dữ liệu xoá sản phẩm khỏi giỏ hàng",
+    });
+  }
+
+  const sql = `
+    DELETE FROM cart
+    WHERE user_id = ? AND product_id = ? AND type = ?
+  `;
+
+  db.query(sql, [user_id, product_id, type], (err, result) => {
+    if (err) {
+      console.error("Lỗi khi xoá sản phẩm khỏi giỏ hàng:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi khi xoá sản phẩm khỏi giỏ hàng",
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy sản phẩm trong giỏ hàng",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Xoá sản phẩm khỏi giỏ hàng thành công",
+    });
+  });
+});
+
+app.get("/bill/:id", (req, res) => {
+  const user_id = req.params.id;
+
+  db.query(
+    "SELECT * FROM bill where user_id = ? ORDER BY date DESC, id DESC",
+    [user_id],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Lỗi khi lấy dữ liệu bill theo ID");
+      }
+      res.json(results);
+    }
+  );
+});
+
+app.get("/bill-detail/:id", (req, res) => {
+  const bill_id = req.params.id;
+
+  db.query(
+    "SELECT * FROM bill_detail where bill_id = ?",
+    [bill_id],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Lỗi khi lấy dữ liệu bill_detail theo ID");
+      }
+      res.json(results);
+    }
+  );
+});
+
+app.get("/bill-full/:billId", async (req, res) => {
+  const billId = req.params.billId;
+
+  const tableMap = {
+    Iphone: "iphone",
+    Ipad: "ipad",
+    Mac: "mac",
+    Watch: "watch",
+    Airpods: "airpods",
+  };
+
+  try {
+    // Lấy bill
+    const bill = await new Promise((resolve, reject) => {
+      db.query("SELECT * FROM bill WHERE id = ?", [billId], (err, results) => {
+        if (err) return reject(err);
+        resolve(results[0]);
+      });
+    });
+
+    if (!bill) {
+      return res.status(404).json({ message: "Không tìm thấy bill" });
+    }
+
+    // Lấy bill_detail
+    const billDetails = await new Promise((resolve, reject) => {
+      db.query(
+        "SELECT * FROM bill_detail WHERE bill_id = ?",
+        [billId],
+        (err, results) => {
+          if (err) return reject(err);
+          resolve(results);
+        }
+      );
+    });
+
+    let items = [];
+
+    if (billDetails.length > 0) {
+      items = await Promise.all(
+        billDetails.map((detail) => {
+          const tableName = tableMap[detail.type];
+
+          if (!tableName) {
+            return { ...detail, product: null };
+          }
+
+          return new Promise((resolve, reject) => {
+            db.query(
+              `SELECT * FROM ${tableName} WHERE id = ?`,
+              [detail.product_id],
+              (err, productResult) => {
+                if (err) return reject(err);
+
+                resolve({
+                  ...detail,
+                  product: productResult[0] || null,
+                });
+              }
+            );
+          });
+        })
+      );
+    } else if (bill.product_id) {
+      const tableName = tableMap[bill.product_type];
+
+      if (tableName) {
+        const product = await new Promise((resolve, reject) => {
+          db.query(
+            `SELECT * FROM ${tableName} WHERE id = ?`,
+            [bill.product_id],
+            (err, results) => {
+              if (err) return reject(err);
+              resolve(results[0] || null);
+            }
+          );
+        });
+
+        items = [
+          {
+            id: null,
+            bill_id: bill.id,
+            product_id: bill.product_id,
+            type: bill.product_type,
+            quantity: 1,
+            product: product
+              ? {
+                  ...product,
+                  color: bill.color,
+                  capacity: bill.capacity,
+                  ram: bill.ram,
+                  rom: bill.rom,
+                }
+              : null,
+          },
+        ];
+      }
+    }
+
+    // Response
+    res.json({
+      bill,
+      items,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi khi lấy bill đầy đủ" });
+  }
+});
+
+app.put("/bill/cancel/:billId", async (req, res) => {
+  const billId = req.params.billId;
+
+  const tableMap = {
+    Iphone: "iphone",
+    Ipad: "ipad",
+    Mac: "mac",
+    Watch: "watch",
+    Airpods: "airpods",
+  };
+
+  try {
+    // ===== 1. Lấy bill =====
+    const bill = await new Promise((resolve, reject) => {
+      db.query("SELECT * FROM bill WHERE id = ?", [billId], (err, results) => {
+        if (err) return reject(err);
+        resolve(results[0]);
+      });
+    });
+
+    if (!bill) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
+
+    if (bill.payment_status !== "Đang chờ thanh toán") {
+      return res.status(400).json({ message: "Đơn hàng không thể huỷ" });
+    }
+
+    // ===== 2. Lấy bill_detail =====
+    const billDetails = await new Promise((resolve, reject) => {
+      db.query(
+        "SELECT * FROM bill_detail WHERE bill_id = ?",
+        [billId],
+        (err, results) => {
+          if (err) return reject(err);
+          resolve(results);
+        }
+      );
+    });
+
+    // ===== 3. BEGIN TRANSACTION =====
+    await new Promise((resolve, reject) =>
+      db.query("START TRANSACTION", (err) => (err ? reject(err) : resolve()))
+    );
+
+    // ===================================
+    // CASE 1: MUA QUA GIỎ HÀNG
+    // ===================================
+    if (billDetails.length > 0) {
+      for (const item of billDetails) {
+        const tableName = tableMap[item.type];
+        if (!tableName) continue;
+
+        await new Promise((resolve, reject) => {
+          db.query(
+            `UPDATE ${tableName} SET quantity = quantity + ? WHERE id = ?`,
+            [item.quantity, item.product_id],
+            (err) => (err ? reject(err) : resolve())
+          );
+        });
+      }
+    }
+
+    // ===================================
+    // CASE 2: MUA NHANH
+    // ===================================
+    else if (bill.product_id) {
+      const tableName = tableMap[bill.product_type];
+
+      if (tableName) {
+        await new Promise((resolve, reject) => {
+          db.query(
+            `UPDATE ${tableName} SET quantity = quantity + 1 WHERE id = ?`,
+            [bill.product_id],
+            (err) => (err ? reject(err) : resolve())
+          );
+        });
+      }
+    }
+
+    // ===== 4. Update trạng thái bill =====
+    await new Promise((resolve, reject) => {
+      db.query(
+        `UPDATE bill 
+         SET payment_status = 'Đã huỷ' 
+         WHERE id = ?`,
+        [billId],
+        (err) => (err ? reject(err) : resolve())
+      );
+    });
+
+    // ===== 5. COMMIT =====
+    await new Promise((resolve, reject) =>
+      db.query("COMMIT", (err) => (err ? reject(err) : resolve()))
+    );
+
+    res.json({ success: true, message: "Huỷ đơn thành công" });
+  } catch (err) {
+    console.error(err);
+
+    // ===== ROLLBACK =====
+    await new Promise((resolve) => db.query("ROLLBACK", () => resolve()));
+
+    res.status(500).json({ message: "Huỷ đơn thất bại" });
+  }
+});
+
+const PORT = 5000;
+app.listen(PORT, () => {
+  console.log("Backend chạy tại http://localhost:5000");
+});
