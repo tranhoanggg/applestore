@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { resolveProductImage } from "../../utils/image";
 import "./BuyPhone.css";
 
 const BuyPhone = () => {
@@ -236,9 +237,11 @@ const BuyPhone = () => {
               <div className="buy-left">
                 <div className="buy-image-container">
                   <img
-                    src={`/assets/images/Iphone/${currentProduct.name
-                      .toLowerCase()
-                      .replace(/\s+/g, "")}/${currentProduct.image}/1.png`}
+                    src={resolveProductImage(
+                      currentProduct.name,
+                      currentProduct.image,
+                      "Iphone"
+                    )}
                     alt={currentProduct.name}
                     className="buy-image"
                   />

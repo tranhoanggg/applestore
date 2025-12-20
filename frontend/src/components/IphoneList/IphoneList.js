@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import "./IphoneList.css";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { resolveProductImage } from "../../utils/image";
 
 function IphoneList() {
   const navigate = useNavigate();
@@ -268,11 +269,11 @@ function IphoneList() {
                     <img
                       className="iphone-poster-img"
                       alt={iphone.name}
-                      src={`/assets/images/Iphone/${iphone.name
-                        .toLowerCase()
-                        .replace(/\s+/g, "")}/${
-                        iphone.colorMap[activeColors[iphone.name]]
-                      }/1.png`}
+                      src={resolveProductImage(
+                        iphone.name,
+                        iphone.colorMap[activeColors[iphone.name]],
+                        "Iphone"
+                      )}
                     />
                   </div>
 

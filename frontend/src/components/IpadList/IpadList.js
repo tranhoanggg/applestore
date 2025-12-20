@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./IpadList.css";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { resolveProductImage } from "../../utils/image";
 
 function IpadList() {
   const navigate = useNavigate();
@@ -249,11 +250,11 @@ function IpadList() {
                     <img
                       className="ipad-poster-img"
                       alt={ipad.name}
-                      src={`/assets/images/Ipad/${ipad.name
-                        .toLowerCase()
-                        .replace(/\s+/g, "")}/${
-                        ipad.colorMap[activeColors[ipad.name]]
-                      }/1.png`}
+                      src={resolveProductImage(
+                        ipad.name,
+                        ipad.colorMap[activeColors[ipad.name]],
+                        "Ipad"
+                      )}
                     />
                   </div>
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { resolveProductImage } from "../../utils/image";
 import "./Bill.css";
 
 const Bill = () => {
@@ -265,9 +266,11 @@ const Bill = () => {
                       <div className="bill-item" key={idx}>
                         <img
                           className="bill-img"
-                          src={`/assets/images/${type}/${product.name
-                            .toLowerCase()
-                            .replace(/\s+/g, "")}/${product.image}/1.png`}
+                          src={resolveProductImage(
+                            product.name,
+                            product.image,
+                            type
+                          )}
                           alt={product.name}
                         />
 

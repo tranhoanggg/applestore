@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { resolveProductImage } from "../../utils/image";
 import "./CheckoutSummary.css";
 
 export default function CheckoutSummary() {
@@ -462,9 +463,7 @@ export default function CheckoutSummary() {
               <div className="checkout-item" key={item.cartId}>
                 <img
                   className="checkout-img"
-                  src={`/assets/images/${type}/${product.name
-                    .toLowerCase()
-                    .replace(/\s+/g, "")}/${product.image}/1.png`}
+                  src={resolveProductImage(product.name, product.image, type)}
                   alt={product.name}
                 />
 

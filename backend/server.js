@@ -1,10 +1,329 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
 const db = require("./db");
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "30mb" }));
+
+const queryAsync = (sql, params = []) =>
+  new Promise((resolve, reject) => {
+    db.query(sql, params, (err, results) => {
+      if (err) return reject(err);
+      resolve(results);
+    });
+  });
+
+// Secret dùng để ký/kiểm tra adminToken (giữ tên biến môi trường cũ để tương thích)
+const ADMIN_BOOTSTRAP_SECRET = process.env.ADMIN_BOOTSTRAP_SECRET || "change-me";
+
+// Đảm bảo cột role tồn tại để phân quyền tài khoản
+function ensureRoleColumn(callback = () => {}) {
+  db.query(
+    "SHOW COLUMNS FROM client_account LIKE 'role'",
+    (err, results) => {
+      if (err) {
+        console.error("Không thể kiểm tra cột role", err);
+        return;
+      }
+
+      if (results.length === 0) {
+        db.query(
+          "ALTER TABLE client_account ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'",
+          (alterErr) => {
+            if (alterErr) {
+              console.error("Không thể thêm cột role", alterErr);
+              return;
+            } else {
+              console.log("Đã thêm cột role vào client_account");
+              callback();
+            }
+          }
+        );
+      } else {
+        callback();
+      }
+    }
+  );
+}
+
+ensureRoleColumn(() => ensureDefaultAdmin());
+
+// Tạo sẵn tài khoản admin mặc định (an toàn khi chạy nhiều lần)
+function ensureDefaultAdmin() {
+  const defaultAdmin = {
+    name: "Admin",
+    birthday: "2000-01-01",
+    email: "admin",
+    phone: "0000000000",
+    password: "12345687",
+  };
+
+  db.query(
+    "SELECT id FROM client_account WHERE role = 'admin' OR email = ? LIMIT 1",
+    [defaultAdmin.email],
+    (err, results) => {
+      if (err) {
+        console.error("Không thể kiểm tra tài khoản admin mặc định", err);
+        return;
+      }
+
+      if (results.length > 0) {
+        return; // đã tồn tại, không thêm lại
+      }
+
+      db.query(
+        `INSERT INTO client_account (name, birthday, email, phone, password, role)
+         VALUES (?, ?, ?, ?, ?, 'admin')`,
+        [
+          defaultAdmin.name,
+          defaultAdmin.birthday,
+          defaultAdmin.email,
+          defaultAdmin.phone,
+          defaultAdmin.password,
+        ],
+        (insertErr) => {
+          if (insertErr) {
+            console.error("Không thể tạo admin mặc định", insertErr);
+          } else {
+            console.log("Đã tạo tài khoản admin mặc định (email: admin)");
+          }
+        }
+      );
+    }
+  );
+}
+
+const PRODUCT_TABLES = {
+  iphone: {
+    table: "iphone",
+    fields: [
+      "name",
+      "capacity",
+      "color",
+      "code",
+      "price",
+      "tag",
+      "quantity",
+      "image",
+    ],
+  },
+  ipad: {
+    table: "ipad",
+    fields: [
+      "name",
+      "capacity",
+      "color",
+      "code",
+      "price",
+      "tag",
+      "quantity",
+      "image",
+    ],
+  },
+  mac: {
+    table: "mac",
+    fields: [
+      "name",
+      "ram",
+      "rom",
+      "color",
+      "code",
+      "price",
+      "tag",
+      "quantity",
+      "image",
+    ],
+  },
+  watch: {
+    table: "watch",
+    fields: ["name", "color", "code", "price", "tag", "quantity", "image"],
+  },
+};
+
+const TABLE_NAME_BY_TYPE = {
+  Iphone: "iphone",
+  Ipad: "ipad",
+  Mac: "mac",
+  Watch: "watch",
+  Airpods: "airpods",
+};
+
+const ADMIN_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const ASSET_ROOT = path.join(__dirname, "../frontend/public/assets/images");
+
+const ensureDir = (dirPath) => {
+  fs.mkdirSync(dirPath, { recursive: true });
+};
+
+const normalizeSegment = (value = "") =>
+  value
+    .toString()
+    .trim()
+    .replace(/[\\/]+/g, " ")
+    .toLowerCase()
+    .replace(/\s+/g, "");
+
+const getTypeFolderName = (type) => {
+  const lower = (type || "").toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+};
+
+const detectExtension = (dataUri = "", fallback = "png") => {
+  const match = dataUri.match(/^data:image\/([a-zA-Z0-9+]+);base64,/);
+  if (match && match[1]) {
+    const ext = match[1].toLowerCase();
+    if (["png", "jpg", "jpeg", "webp"].includes(ext)) return ext === "jpg" ? "jpeg" : ext;
+  }
+  const nameExt = fallback.split(".").pop();
+  return nameExt || "png";
+};
+
+const normalizeImageValue = (value) => {
+  if (!value) return "";
+  const trimmed = value.toString().trim();
+  if (/^(https?:|data:|blob:)/i.test(trimmed)) return trimmed;
+  if (/^\/?assets\//i.test(trimmed)) return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  return normalizeSegment(trimmed);
+};
+
+const extractFolderSegment = (folder = "") => {
+  const trimmed = folder.toString().trim();
+  if (!trimmed) return "";
+
+  if (trimmed.includes("/")) {
+    const parts = trimmed.split("/").filter(Boolean);
+    if (!parts.length) return "";
+    const last = parts[parts.length - 1];
+    const beforeLast = parts[parts.length - 2];
+    if (/\.(png|jpe?g|webp)$/i.test(last) && beforeLast) {
+      return beforeLast;
+    }
+    return last;
+  }
+
+  return trimmed;
+};
+
+const writeImagesToAssets = ({ type, name, folder, images = [] }) => {
+  if (!images.length) return null;
+
+  const safeType = getTypeFolderName(type);
+  const safeName = normalizeSegment(name);
+  const safeFolder = normalizeSegment(extractFolderSegment(folder) || "default");
+
+  if (!safeType || !safeName || !safeFolder) {
+    return null;
+  }
+
+  const targetDir = path.join(ASSET_ROOT, safeType, safeName, safeFolder);
+  ensureDir(targetDir);
+
+  // clean old files for the folder to avoid stale images
+  fs.readdirSync(targetDir).forEach((file) => {
+    const full = path.join(targetDir, file);
+    if (fs.statSync(full).isFile()) {
+      fs.unlinkSync(full);
+    }
+  });
+
+  images.forEach((img, idx) => {
+    const data = typeof img === "string" ? img : img?.data;
+    if (!data || !data.startsWith("data:image/")) return;
+    const ext = detectExtension(data, img?.name || "png");
+    const base64 = data.split(",")[1];
+    const buffer = Buffer.from(base64, "base64");
+    fs.writeFileSync(path.join(targetDir, `${idx + 1}.${ext}`), buffer);
+  });
+
+  // return db-friendly first image path
+  const firstExt = detectExtension(images[0]?.data || images[0], images[0]?.name || "png");
+  return `/assets/images/${safeType}/${safeName}/${safeFolder}/1.${firstExt}`;
+};
+
+function createAdminToken(admin) {
+  const payload = {
+    id: admin.id,
+    email: admin.email,
+    issuedAt: Date.now(),
+  };
+  const serialized = JSON.stringify(payload);
+  const signature = crypto
+    .createHmac("sha256", ADMIN_BOOTSTRAP_SECRET)
+    .update(serialized)
+    .digest("hex");
+
+  return `${Buffer.from(serialized).toString("base64url")}.${signature}`;
+}
+
+function verifyAdminToken(token) {
+  if (!token || !token.includes(".")) {
+    return null;
+  }
+
+  const [encodedPayload, signature] = token.split(".");
+  try {
+    const payloadBuffer = Buffer.from(encodedPayload, "base64url");
+    const serialized = payloadBuffer.toString();
+    const expectedSignature = crypto
+      .createHmac("sha256", ADMIN_BOOTSTRAP_SECRET)
+      .update(serialized)
+      .digest("hex");
+
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+      return null;
+    }
+
+    const payload = JSON.parse(serialized);
+    if (Date.now() - payload.issuedAt > ADMIN_TOKEN_TTL_MS) {
+      return null;
+    }
+
+    return payload;
+  } catch (err) {
+    console.error("Không thể xác thực admin token", err);
+    return null;
+  }
+}
+
+const requireAdmin = (req, res, next) => {
+  const authHeader = req.headers["authorization"] || "";
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.substring("Bearer ".length).trim()
+    : null;
+
+  const tokenData = verifyAdminToken(token);
+  if (!tokenData) {
+    return res
+      .status(401)
+      .json({ success: false, message: "Thiếu hoặc sai thông tin xác thực admin" });
+  }
+
+  db.query(
+    "SELECT id, role, email FROM client_account WHERE id = ?",
+    [tokenData.id],
+    (err, results) => {
+      if (err) {
+        console.error("Không thể kiểm tra quyền admin", err);
+        return res.status(500).json({ success: false });
+      }
+
+      const user = results[0];
+      if (!user || user.role !== "admin") {
+        return res
+          .status(403)
+          .json({ success: false, message: "Tài khoản không phải admin" });
+      }
+
+      req.admin = user;
+      next();
+    }
+  );
+};
 
 app.get("/iphones", (req, res) => {
   db.query("SELECT * FROM iphone", (err, results) => {
@@ -221,52 +540,160 @@ app.put("/client_account/update", (req, res) => {
   });
 });
 
-app.put("/client_account/password-reset", (req, res) => {
-  const { id, new_password } = req.body;
+app.post("/client_account/password-reset/check", (req, res) => {
+  const { id, current_password } = req.body;
 
-  if (!id) {
+  if (!id || !current_password) {
     return res.status(400).json({
       success: false,
-      message: "Thiếu id người dùng",
+      message: "Thiếu thông tin xác thực mật khẩu",
     });
   }
 
-  const sql = `
-    UPDATE client_account
-    SET 
-      password = ?
-    WHERE id = ?
-  `;
+  db.query(
+    "SELECT password FROM client_account WHERE id = ?",
+    [id],
+    (err, results) => {
+      if (err) {
+        console.error("Lỗi khi kiểm tra mật khẩu người dùng:", err);
+        return res.status(500).json({
+          success: false,
+          message: "Lỗi khi kiểm tra mật khẩu người dùng",
+        });
+      }
 
-  db.query(sql, [new_password, id], (err, result) => {
-    if (err) {
-      console.error("Lỗi khi cập nhật mật khẩu người dùng:", err);
-      return res.status(500).json({
-        success: false,
-        message: "Lỗi khi cập nhật mật khẩu người dùng",
-      });
+      if (!results || results.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy người dùng",
+        });
+      }
+
+      if (results[0].password !== current_password) {
+        return res.status(400).json({
+          success: false,
+          message: "Mật khẩu chưa chính xác",
+        });
+      }
+
+      return res.json({ success: true });
     }
+  );
+});
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy người dùng",
-      });
-    }
+app.put("/client_account/password-reset", (req, res) => {
+  const { id, new_password, current_password } = req.body;
 
-    res.json({
-      success: true,
-      message: "Cập nhật mật khẩu thành công",
+  if (!id || !new_password || !current_password) {
+    return res.status(400).json({
+      success: false,
+      message: "Thiếu thông tin đổi mật khẩu",
     });
-  });
+  }
+
+  db.query(
+    "SELECT password FROM client_account WHERE id = ?",
+    [id],
+    (err, results) => {
+      if (err) {
+        console.error("Lỗi khi kiểm tra mật khẩu hiện tại:", err);
+        return res.status(500).json({
+          success: false,
+          message: "Lỗi khi kiểm tra mật khẩu hiện tại",
+        });
+      }
+
+      if (!results || results.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy người dùng",
+        });
+      }
+
+      if (results[0].password !== current_password) {
+        return res.status(400).json({
+          success: false,
+          message: "Mật khẩu hiện tại chưa chính xác",
+        });
+      }
+
+      const sql = `
+        UPDATE client_account
+        SET
+          password = ?
+        WHERE id = ?
+      `;
+
+      db.query(sql, [new_password, id], (updateErr, result) => {
+        if (updateErr) {
+          console.error("Lỗi khi cập nhật mật khẩu người dùng:", updateErr);
+          return res.status(500).json({
+            success: false,
+            message: "Lỗi khi cập nhật mật khẩu người dùng",
+          });
+        }
+
+        if (result.affectedRows === 0) {
+          return res.status(404).json({
+            success: false,
+            message: "Không tìm thấy người dùng",
+          });
+        }
+
+        res.json({
+          success: true,
+          message: "Cập nhật mật khẩu thành công",
+        });
+      });
+    }
+  );
+});
+
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "Thiếu email hoặc mật khẩu",
+    });
+  }
+
+  db.query(
+    "SELECT id, name, birthday, email, phone, password, role FROM client_account WHERE email = ?",
+    [email],
+    (err, results) => {
+      if (err) {
+        console.error("Không thể đăng nhập", err);
+        return res.status(500).json({ success: false });
+      }
+
+      const user = results[0];
+      if (!user || user.password !== password) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
+      }
+
+      const normalizedUser = { ...user, role: user.role || "user" };
+      delete normalizedUser.password;
+
+      const response = { success: true, user: normalizedUser };
+      if (normalizedUser.role === "admin") {
+        response.adminToken = createAdminToken(user);
+      }
+
+      res.json(response);
+    }
+  );
 });
 
 app.post("/signup", (req, res) => {
   const { name, birthday, email, phone, password } = req.body;
 
   const sql = `
-    INSERT INTO client_account (name, birthday, email, phone, password)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO client_account (name, birthday, email, phone, password, role)
+    VALUES (?, ?, ?, ?, ?, 'user')
   `;
 
   db.query(sql, [name, birthday, email, phone, password], (err, result) => {
@@ -430,7 +857,7 @@ app.post("/ipads/pay", (req, res) => {
           address_detail, commune, district, city, date,
           payment_method, bank, payment_status
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       db.query(
@@ -625,11 +1052,12 @@ app.post("/watchs/pay", (req, res) => {
 
       const insertBillSql = `
         INSERT INTO bill (
-          user_id, name, phone, product_id, product_type, color, ram, rom,
+          user_id, name, phone, product_id, product_type,
+          color, capacity, ram, rom,
           address_detail, commune, district, city, date,
           payment_method, bank, payment_status
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       db.query(
@@ -641,6 +1069,9 @@ app.post("/watchs/pay", (req, res) => {
           product_id,
           product_type,
           color,
+          "",   // capacity
+          "",   // ram
+          "",   // rom
           address_detail,
           commune,
           district,
@@ -1069,14 +1500,6 @@ app.get("/bill-detail/:id", (req, res) => {
 app.get("/bill-full/:billId", async (req, res) => {
   const billId = req.params.billId;
 
-  const tableMap = {
-    Iphone: "iphone",
-    Ipad: "ipad",
-    Mac: "mac",
-    Watch: "watch",
-    Airpods: "airpods",
-  };
-
   try {
     // Lấy bill
     const bill = await new Promise((resolve, reject) => {
@@ -1107,7 +1530,7 @@ app.get("/bill-full/:billId", async (req, res) => {
     if (billDetails.length > 0) {
       items = await Promise.all(
         billDetails.map((detail) => {
-          const tableName = tableMap[detail.type];
+        const tableName = TABLE_NAME_BY_TYPE[detail.type];
 
           if (!tableName) {
             return { ...detail, product: null };
@@ -1130,7 +1553,7 @@ app.get("/bill-full/:billId", async (req, res) => {
         })
       );
     } else if (bill.product_id) {
-      const tableName = tableMap[bill.product_type];
+    const tableName = TABLE_NAME_BY_TYPE[bill.product_type];
 
       if (tableName) {
         const product = await new Promise((resolve, reject) => {
@@ -1179,14 +1602,6 @@ app.get("/bill-full/:billId", async (req, res) => {
 app.put("/bill/cancel/:billId", async (req, res) => {
   const billId = req.params.billId;
 
-  const tableMap = {
-    Iphone: "iphone",
-    Ipad: "ipad",
-    Mac: "mac",
-    Watch: "watch",
-    Airpods: "airpods",
-  };
-
   try {
     // ===== 1. Lấy bill =====
     const bill = await new Promise((resolve, reject) => {
@@ -1226,7 +1641,7 @@ app.put("/bill/cancel/:billId", async (req, res) => {
     // ===================================
     if (billDetails.length > 0) {
       for (const item of billDetails) {
-        const tableName = tableMap[item.type];
+        const tableName = TABLE_NAME_BY_TYPE[item.type];
         if (!tableName) continue;
 
         await new Promise((resolve, reject) => {
@@ -1243,7 +1658,7 @@ app.put("/bill/cancel/:billId", async (req, res) => {
     // CASE 2: MUA NHANH
     // ===================================
     else if (bill.product_id) {
-      const tableName = tableMap[bill.product_type];
+      const tableName = TABLE_NAME_BY_TYPE[bill.product_type];
 
       if (tableName) {
         await new Promise((resolve, reject) => {
@@ -1281,6 +1696,282 @@ app.put("/bill/cancel/:billId", async (req, res) => {
 
     res.status(500).json({ message: "Huỷ đơn thất bại" });
   }
+});
+
+// =========================
+// ADMIN APIs
+// =========================
+app.post("/admin/login", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Thiếu email hoặc mật khẩu" });
+  }
+
+  db.query(
+    "SELECT id, name, birthday, email, phone, role FROM client_account WHERE email = ? AND password = ?",
+    [email, password],
+    (err, results) => {
+      if (err) {
+        console.error("Không thể đăng nhập admin", err);
+        return res.status(500).json({ success: false });
+      }
+
+      const user = results[0];
+      if (!user || user.role !== "admin") {
+        return res
+          .status(401)
+          .json({ success: false, message: "Thông tin đăng nhập không hợp lệ" });
+      }
+
+      const token = createAdminToken(user);
+      res.json({ success: true, token, user: { ...user, role: user.role || "admin" } });
+    }
+  );
+});
+
+// =========================
+// ADMIN APIs
+// =========================
+app.get("/admin/bills", requireAdmin, async (req, res) => {
+  try {
+    const bills = await queryAsync(
+      "SELECT * FROM bill ORDER BY date DESC, id DESC"
+    );
+
+    const billsWithItems = await Promise.all(
+      bills.map(async (bill) => {
+        const details = await queryAsync(
+          "SELECT * FROM bill_detail WHERE bill_id = ?",
+          [bill.id]
+        );
+
+        const items = [];
+        const attachProduct = async (type, productId, quantity = 1) => {
+          const tableName = TABLE_NAME_BY_TYPE[type];
+          if (!tableName || !productId) return;
+
+          try {
+            const productRows = await queryAsync(
+              `SELECT name FROM ${tableName} WHERE id = ?`,
+              [productId]
+            );
+            items.push({
+              product_id: productId,
+              type,
+              quantity,
+              name: productRows[0]?.name || "",
+            });
+          } catch (err) {
+            console.error("Không thể lấy thông tin sản phẩm", err);
+          }
+        };
+
+        if (bill.product_id && bill.product_type) {
+          await attachProduct(bill.product_type, bill.product_id, 1);
+        }
+
+        for (const detail of details) {
+          await attachProduct(detail.type, detail.product_id, detail.quantity);
+        }
+
+        return { ...bill, items };
+      })
+    );
+
+    res.json(billsWithItems);
+  } catch (err) {
+    console.error("Không thể lấy danh sách đơn hàng", err);
+    res.status(500).json({ success: false });
+  }
+});
+
+app.put("/admin/bill/approve/:billId", requireAdmin, (req, res) => {
+  const billId = req.params.billId;
+
+  db.query(
+    "UPDATE bill SET payment_status = 'Thành công' WHERE id = ?",
+    [billId],
+    (err, result) => {
+      if (err) {
+        console.error("Không thể cập nhật trạng thái đơn", err);
+        return res.status(500).json({ success: false });
+      }
+
+      if (result.affectedRows === 0) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Không tìm thấy đơn hàng" });
+      }
+
+      res.json({ success: true, message: "Đã duyệt đơn hàng" });
+    }
+  );
+});
+
+app.post("/admin/products/:type", requireAdmin, (req, res) => {
+  const type = req.params.type.toLowerCase();
+  const config = PRODUCT_TABLES[type];
+
+  if (!config) {
+    return res.status(400).json({ success: false, message: "Loại sản phẩm không hợp lệ" });
+  }
+
+  const missing = config.fields.filter((f) => req.body[f] === undefined);
+  if (missing.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: `Thiếu thông tin: ${missing.join(", ")}`,
+    });
+  }
+
+  const payload = {};
+  config.fields.forEach((f) => (payload[f] = req.body[f]));
+
+  if (Array.isArray(req.body.images) && req.body.images.length) {
+    const savedPath = writeImagesToAssets({
+      type,
+      name: req.body.name,
+      folder: req.body.image || req.body.color,
+      images: req.body.images,
+    });
+
+    if (savedPath) {
+      payload.image = savedPath;
+    }
+  } else if (payload.image) {
+    payload.image = normalizeImageValue(payload.image);
+  }
+
+  db.query(
+    `INSERT INTO ${config.table} SET ?`,
+    payload,
+    (err, result) => {
+      if (err) {
+        console.error("Không thể thêm sản phẩm", err);
+        return res.status(500).json({ success: false });
+      }
+
+      res.json({ success: true, id: result.insertId });
+    }
+  );
+});
+
+app.put("/admin/products/:type/:id", requireAdmin, (req, res) => {
+  const type = req.params.type.toLowerCase();
+  const config = PRODUCT_TABLES[type];
+  const id = req.params.id;
+
+  if (!config) {
+    return res.status(400).json({ success: false, message: "Loại sản phẩm không hợp lệ" });
+  }
+
+  const payload = {};
+  config.fields.forEach((f) => {
+    if (req.body[f] !== undefined) {
+      payload[f] = req.body[f];
+    }
+  });
+
+  if (Array.isArray(req.body.images) && req.body.images.length) {
+    const savedPath = writeImagesToAssets({
+      type,
+      name: req.body.name || payload.name,
+      folder: req.body.image || req.body.color || payload.image || payload.color,
+      images: req.body.images,
+    });
+
+    if (savedPath) {
+      payload.image = savedPath;
+    }
+  } else if (payload.image) {
+    payload.image = normalizeImageValue(payload.image);
+  }
+
+  if (Object.keys(payload).length === 0) {
+    return res.status(400).json({ success: false, message: "Không có dữ liệu cập nhật" });
+  }
+
+  db.query(
+    `UPDATE ${config.table} SET ? WHERE id = ?`,
+    [payload, id],
+    (err, result) => {
+      if (err) {
+        console.error("Không thể cập nhật sản phẩm", err);
+        return res.status(500).json({ success: false });
+      }
+
+      if (result.affectedRows === 0) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Không tìm thấy sản phẩm" });
+      }
+
+      res.json({ success: true });
+    }
+  );
+});
+
+app.delete("/admin/products/:type/:id", requireAdmin, (req, res) => {
+  const type = req.params.type.toLowerCase();
+  const config = PRODUCT_TABLES[type];
+  const id = req.params.id;
+
+  if (!config) {
+    return res.status(400).json({ success: false, message: "Loại sản phẩm không hợp lệ" });
+  }
+
+  db.query(
+    `DELETE FROM ${config.table} WHERE id = ?`,
+    [id],
+    (err, result) => {
+      if (err) {
+        console.error("Không thể xóa sản phẩm", err);
+        return res.status(500).json({ success: false });
+      }
+
+      if (result.affectedRows === 0) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Không tìm thấy sản phẩm" });
+      }
+
+      res.json({ success: true });
+    }
+  );
+});
+
+app.put("/admin/users/:id/role", requireAdmin, (req, res) => {
+  const { role } = req.body;
+  const { id } = req.params;
+  const allowedRoles = ["user", "admin"];
+
+  if (!allowedRoles.includes(role)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Role không hợp lệ" });
+  }
+
+  db.query(
+    "UPDATE client_account SET role = ? WHERE id = ?",
+    [role, id],
+    (err, result) => {
+      if (err) {
+        console.error("Không thể cập nhật role người dùng", err);
+        return res.status(500).json({ success: false });
+      }
+
+      if (result.affectedRows === 0) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Không tìm thấy người dùng" });
+      }
+
+      res.json({ success: true });
+    }
+  );
 });
 
 app.get("/details/:name", (req, res) => {

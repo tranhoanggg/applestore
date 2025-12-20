@@ -124,6 +124,14 @@
   text-decoration: none;
 }
 
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
 .link.link-signup {
   margin-left: 6px;
 }

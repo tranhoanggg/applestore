@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./WatchList.css";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { resolveProductImage } from "../../utils/image";
 
 function WatchList() {
   const navigate = useNavigate();
@@ -251,11 +252,11 @@ function WatchList() {
                     <img
                       className="watch-poster-img"
                       alt={watch.name}
-                      src={`/assets/images/watch/${watch.name
-                        .toLowerCase()
-                        .replace(/\s+/g, "")}/${
-                        watch.colorMap[activeColors[watch.name]]
-                      }/1.png`}
+                      src={resolveProductImage(
+                        watch.name,
+                        watch.colorMap[activeColors[watch.name]],
+                        "Watch"
+                      )}
                     />
                   </div>
 

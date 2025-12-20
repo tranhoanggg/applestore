@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./IpadPage.css";
 import { useNavigate } from "react-router-dom";
+import { resolveProductImage } from "../../utils/image";
 
 function IpadPage() {
   const navigate = useNavigate();
@@ -121,9 +122,11 @@ function IpadPage() {
 
               <div className="ipadpage-image">
                 <img
-                  src={`/assets/images/Ipad/${ipad.name
-                    .toLowerCase()
-                    .replace(/\s+/g, "")}/${ipad.colorMap[activeColor]}/1.png`}
+                  src={resolveProductImage(
+                    ipad.name,
+                    ipad.colorMap[activeColor],
+                    "Ipad"
+                  )}
                   alt={ipad.name}
                 />
               </div>

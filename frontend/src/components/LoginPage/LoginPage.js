@@ -51,36 +51,31 @@ export default function LoginPage() {
     if (!checkEnoughInformation()) return;
 
     try {
-      const res = await fetch("http://localhost:5000/client_account");
-      const users = await res.json();
+      const res = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
 
-      const user = users.find((u) => u.email === form.email);
-
-      if (!user) {
+      const data = await res.json();
+      if (!res.ok || !data.success) {
         document
           .querySelector(".loginpage-warning")
           .classList.add("warning-active");
         return;
-      } else {
-        document
-          .querySelector(".loginpage-warning")
-          .classList.remove("warning-active");
       }
 
-      if (user.password !== form.password) {
-        document
-          .querySelector(".loginpage-warning")
-          .classList.add("warning-active");
-        return;
-      } else {
-        document
-          .querySelector(".loginpage-warning")
-          .classList.remove("warning-active");
-      }
+      const normalizedUser = {
+        ...(data.user || {}),
+        role: data.user?.role || "user",
+        adminToken: data.adminToken,
+      };
 
       alert("Đăng nhập thành công!");
 
-      localStorage.setItem("client", JSON.stringify(user));
+      localStorage.setItem("client", JSON.stringify(normalizedUser));
       window.dispatchEvent(new Event("storage"));
 
       if (location.state?.redirectTo) {
@@ -170,12 +165,12 @@ export default function LoginPage() {
           </button>
 
           <div className="login-links">
-            <a href="#" className="link">
+            <button type="button" className="link link-button">
               Bạn đã quên mật khẩu?
-            </a>
+            </button>
             <span>
               Bạn chưa có Tài khoản Apple?
-              <a href="signup" className="link link-signup">
+              <a href="/signup" className="link link-signup">
                 Tạo Tài khoản Apple
               </a>
             </span>

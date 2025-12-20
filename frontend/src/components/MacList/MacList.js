@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./MacList.css";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { resolveProductImage } from "../../utils/image";
 
 function MacList() {
   const navigate = useNavigate();
@@ -249,11 +250,11 @@ function MacList() {
                     <img
                       className="mac-poster-img"
                       alt={mac.name}
-                      src={`/assets/images/mac/${mac.name
-                        .toLowerCase()
-                        .replace(/\s+/g, "")}/${
-                        mac.colorMap[activeColors[mac.name]]
-                      }/1.png`}
+                      src={resolveProductImage(
+                        mac.name,
+                        mac.colorMap[activeColors[mac.name]],
+                        "Mac"
+                      )}
                     />
                   </div>
 

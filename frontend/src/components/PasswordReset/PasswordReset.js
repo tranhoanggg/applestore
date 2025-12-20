@@ -27,7 +27,7 @@ export default function PasswordReset() {
   };
 
   /* ================== KIỂM TRA PASSWORD HIỆN TẠI ================== */
-  const handleCheckPassword = () => {
+  const handleCheckPassword = async () => {
     if (!form.password) {
       setErrors({
         passwordEmpty: true,
@@ -36,17 +36,35 @@ export default function PasswordReset() {
       return;
     }
 
-    if (form.password !== client.password) {
-      setErrors({
-        passwordEmpty: false,
-        passwordWrong: true,
-      });
-      return;
-    }
+    try {
+      const res = await fetch(
+        "http://localhost:5000/client_account/password-reset/check",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: client.id,
+            current_password: form.password,
+          }),
+        }
+      );
 
-    // ✅ đúng password
-    setErrors({});
-    setChecked(true);
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setErrors({
+          passwordEmpty: false,
+          passwordWrong: true,
+        });
+        return;
+      }
+
+      // ✅ đúng password
+      setErrors({});
+      setChecked(true);
+    } catch (err) {
+      alert("Lỗi kết nối server");
+    }
   };
 
   /* ================== SUBMIT ================== */
@@ -79,12 +97,18 @@ export default function PasswordReset() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             id: client.id,
+            current_password: form.password,
             new_password: form.newPassword,
           }),
         }
       );
 
       const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        alert(data.message || "Đổi mật khẩu không thành công");
+        return;
+      }
 
       if (data.success) {
         alert("Đã đổi mật khẩu thành công");

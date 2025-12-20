@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./IpadDetail.css";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { resolveProductImage } from "../../utils/image";
 
 function IpadDetail() {
   const { name } = useParams();
@@ -60,14 +61,24 @@ function IpadDetail() {
   useEffect(() => {
     if (!ipad || !activeColor) return;
 
+    const baseImage = resolveProductImage(ipad.name, ipad.colorMap[activeColor], "Ipad");
+
+    if (!baseImage.startsWith("/assets/images/")) {
+      setTotalImages(1);
+      setImageIndex(1);
+      return;
+    }
+
+    const match = baseImage.match(/\/\d+\.(png|jpe?g|webp)$/i);
+    const ext = match?.[1] || "png";
+    const basePath = baseImage.replace(/\/\d+\.(png|jpe?g|webp)$/i, "");
+
     let count = 0;
     let index = 1;
 
     const checkImage = () => {
       const img = new Image();
-      img.src = `/assets/images/Ipad/${ipad.name
-        .toLowerCase()
-        .replace(/\s+/g, "")}/${ipad.colorMap[activeColor]}/${index}.png`;
+      img.src = `${basePath}/${index}.${ext}`;
 
       img.onload = () => {
         count++;
@@ -88,6 +99,11 @@ function IpadDetail() {
 
   const minPrice = Math.min(...ipad.prices);
   const maxPrice = Math.max(...ipad.prices);
+  const baseImage = resolveProductImage(ipad.name, ipad.colorMap[activeColor], "Ipad");
+  const hasGallery = baseImage.startsWith("/assets/images/") && totalImages > 1;
+  const currentImage = hasGallery
+    ? baseImage.replace(/\/(\d+)\.(png|jpe?g|webp)$/i, `/${imageIndex}.$2`)
+    : baseImage;
 
   const handleBuy = () => {
     const client = localStorage.getItem("client");
@@ -95,7 +111,7 @@ function IpadDetail() {
     if (!client) {
       navigate("/login", {
         state: {
-          redirectTo: "/buyPhone",
+          redirectTo: "/buyIpad",
           payload: {
             product_name: ipad.name,
             product_type: "Ipad",
@@ -105,7 +121,7 @@ function IpadDetail() {
       return;
     }
 
-    navigate("/buyPhone", {
+    navigate("/buyIpad", {
       state: {
         product_name: ipad.name,
         product_type: "Ipad",
@@ -139,7 +155,7 @@ function IpadDetail() {
 
         {/* LEFT */}
         <div className="detail-left">
-          {totalImages > 1 && (
+          {hasGallery && (
             <>
               <button className="nav-btn left" onClick={prevImage}>
                 <FaChevronLeft />
@@ -147,17 +163,9 @@ function IpadDetail() {
             </>
           )}
 
-          <img
-            className="detail-image"
-            src={`/assets/images/Ipad/${ipad.name
-              .toLowerCase()
-              .replace(/\s+/g, "")}/${
-              ipad.colorMap[activeColor]
-            }/${imageIndex}.png`}
-            alt={ipad.name}
-          />
+          <img className="detail-image" src={currentImage} alt={ipad.name} />
 
-          {totalImages > 1 && (
+          {hasGallery && (
             <>
               <button className="nav-btn right" onClick={nextImage}>
                 <FaChevronRight />

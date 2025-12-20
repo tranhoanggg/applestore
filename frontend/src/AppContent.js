@@ -13,6 +13,7 @@ import Account from "./components/Account/Account";
 import PasswordReset from "./components/PasswordReset/PasswordReset";
 import CheckoutSummary from "./components/CheckoutSummary/CheckoutSummary";
 import Bill from "./components/Bill/Bill";
+import AdminDashboard from "./components/Admin/AdminDashboard";
 import IphonePage from "./components/IphonePage/IphonePage";
 import IpadPage from "./components/IpadPage/IpadPage";
 import MacPage from "./components/MacPage/MacPage";
@@ -46,6 +47,7 @@ function AppContent() {
         <Route path="/ipad/:name" element={<IpadDetail />} />
         <Route path="/mac/:name" element={<MacDetail />} />
         <Route path="/watch/:name" element={<WatchDetail />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
       <Footer />
     </>

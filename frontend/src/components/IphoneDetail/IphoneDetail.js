@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./IphoneDetail.css";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { resolveProductImage } from "../../utils/image";
 
 function IphoneDetail() {
   const { name } = useParams();
@@ -60,14 +61,24 @@ function IphoneDetail() {
   useEffect(() => {
     if (!iphone || !activeColor) return;
 
+    const baseImage = resolveProductImage(iphone.name, iphone.colorMap[activeColor], "Iphone");
+
+    if (!baseImage.startsWith("/assets/images/")) {
+      setTotalImages(1);
+      setImageIndex(1);
+      return;
+    }
+
+    const match = baseImage.match(/\/\d+\.(png|jpe?g|webp)$/i);
+    const ext = match?.[1] || "png";
+    const basePath = baseImage.replace(/\/\d+\.(png|jpe?g|webp)$/i, "");
+
     let count = 0;
     let index = 1;
 
     const checkImage = () => {
       const img = new Image();
-      img.src = `/assets/images/Iphone/${iphone.name
-        .toLowerCase()
-        .replace(/\s+/g, "")}/${iphone.colorMap[activeColor]}/${index}.png`;
+      img.src = `${basePath}/${index}.${ext}`;
 
       img.onload = () => {
         count++;
@@ -129,6 +140,12 @@ function IphoneDetail() {
     }, 300);
   };
 
+  const baseImage = resolveProductImage(iphone.name, iphone.colorMap[activeColor], "Iphone");
+  const hasGallery = baseImage.startsWith("/assets/images/") && totalImages > 1;
+  const currentImage = hasGallery
+    ? baseImage.replace(/\/(\d+)\.(png|jpe?g|webp)$/i, `/${imageIndex}.$2`)
+    : baseImage;
+
   return (
     <div className={`iphone-detail-overlay ${fadeout ? "fade-out" : ""}`}>
       <div className="iphone-detail-modal">
@@ -139,7 +156,7 @@ function IphoneDetail() {
 
         {/* LEFT */}
         <div className="detail-left">
-          {totalImages > 1 && (
+          {hasGallery && (
             <>
               <button className="nav-btn left" onClick={prevImage}>
                 <FaChevronLeft />
@@ -147,17 +164,9 @@ function IphoneDetail() {
             </>
           )}
 
-          <img
-            className="detail-image"
-            src={`/assets/images/Iphone/${iphone.name
-              .toLowerCase()
-              .replace(/\s+/g, "")}/${
-              iphone.colorMap[activeColor]
-            }/${imageIndex}.png`}
-            alt={iphone.name}
-          />
+          <img className="detail-image" src={currentImage} alt={iphone.name} />
 
-          {totalImages > 1 && (
+          {hasGallery && (
             <>
               <button className="nav-btn right" onClick={nextImage}>
                 <FaChevronRight />

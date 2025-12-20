@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./MacPage.css";
 import { useNavigate } from "react-router-dom";
+import { resolveProductImage } from "../../utils/image";
 
 function MacPage() {
   const navigate = useNavigate();
@@ -121,9 +122,7 @@ function MacPage() {
 
               <div className="macpage-image">
                 <img
-                  src={`/assets/images/Mac/${mac.name
-                    .toLowerCase()
-                    .replace(/\s+/g, "")}/${mac.colorMap[activeColor]}/1.png`}
+                  src={resolveProductImage(mac.name, mac.colorMap[activeColor], "Mac")}
                   alt={mac.name}
                 />
               </div>

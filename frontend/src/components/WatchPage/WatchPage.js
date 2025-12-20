@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./WatchPage.css";
 import { useNavigate } from "react-router-dom";
+import { resolveProductImage } from "../../utils/image";
 
 function WatchPage() {
   const navigate = useNavigate();
@@ -123,9 +124,11 @@ function WatchPage() {
 
               <div className="watchpage-image">
                 <img
-                  src={`/assets/images/Watch/${watch.name
-                    .toLowerCase()
-                    .replace(/\s+/g, "")}/${watch.colorMap[activeColor]}/1.png`}
+                  src={resolveProductImage(
+                    watch.name,
+                    watch.colorMap[activeColor],
+                    "Watch"
+                  )}
                   alt={watch.name}
                 />
               </div>

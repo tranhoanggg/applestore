@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./MacDetail.css";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { resolveProductImage } from "../../utils/image";
 
 function MacDetail() {
   const { name } = useParams();
@@ -60,14 +61,22 @@ function MacDetail() {
   useEffect(() => {
     if (!mac || !activeColor) return;
 
+    const baseImage = resolveProductImage(mac.name, mac.colorMap[activeColor], "Mac");
+
+    if (!baseImage.startsWith("/assets/images/")) {
+      setTotalImages(1);
+      setImageIndex(1);
+      return;
+    }
+
+    const basePath = baseImage.replace(/\/1\.png$/, "");
+
     let count = 0;
     let index = 1;
 
     const checkImage = () => {
       const img = new Image();
-      img.src = `/assets/images/Mac/${mac.name
-        .toLowerCase()
-        .replace(/\s+/g, "")}/${mac.colorMap[activeColor]}/${index}.png`;
+      img.src = `${basePath}/${index}.png`;
 
       img.onload = () => {
         count++;
@@ -89,13 +98,19 @@ function MacDetail() {
   const minPrice = Math.min(...mac.prices);
   const maxPrice = Math.max(...mac.prices);
 
+  const baseImage = resolveProductImage(mac.name, mac.colorMap[activeColor], "Mac");
+  const hasGallery = baseImage.startsWith("/assets/images/") && totalImages > 1;
+  const currentImage = hasGallery
+    ? baseImage.replace(/\/1\.png$/, `/${imageIndex}.png`)
+    : baseImage;
+
   const handleBuy = () => {
     const client = localStorage.getItem("client");
 
     if (!client) {
       navigate("/login", {
         state: {
-          redirectTo: "/buyPhone",
+          redirectTo: "/buyMac",
           payload: {
             product_name: mac.name,
             product_type: "Mac",
@@ -105,7 +120,7 @@ function MacDetail() {
       return;
     }
 
-    navigate("/buyPhone", {
+    navigate("/buyMac", {
       state: {
         product_name: mac.name,
         product_type: "Mac",
@@ -139,7 +154,7 @@ function MacDetail() {
 
         {/* LEFT */}
         <div className="detail-left">
-          {totalImages > 1 && (
+          {hasGallery && (
             <>
               <button className="nav-btn left" onClick={prevImage}>
                 <FaChevronLeft />
@@ -149,15 +164,11 @@ function MacDetail() {
 
           <img
             className="detail-image"
-            src={`/assets/images/Mac/${mac.name
-              .toLowerCase()
-              .replace(/\s+/g, "")}/${
-              mac.colorMap[activeColor]
-            }/${imageIndex}.png`}
+            src={currentImage}
             alt={mac.name}
           />
 
-          {totalImages > 1 && (
+          {hasGallery && (
             <>
               <button className="nav-btn right" onClick={nextImage}>
                 <FaChevronRight />

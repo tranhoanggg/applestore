@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./WatchDetail.css";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { resolveProductImage } from "../../utils/image";
 
 function WatchDetail() {
   const { name } = useParams();
@@ -60,14 +61,24 @@ function WatchDetail() {
   useEffect(() => {
     if (!watch || !activeColor) return;
 
+    const baseImage = resolveProductImage(watch.name, watch.colorMap[activeColor], "Watch");
+
+    if (!baseImage.startsWith("/assets/images/")) {
+      setTotalImages(1);
+      setImageIndex(1);
+      return;
+    }
+
+    const match = baseImage.match(/\/\d+\.(png|jpe?g|webp)$/i);
+    const ext = match?.[1] || "png";
+    const basePath = baseImage.replace(/\/\d+\.(png|jpe?g|webp)$/i, "");
+
     let count = 0;
     let index = 1;
 
     const checkImage = () => {
       const img = new Image();
-      img.src = `/assets/images/Watch/${watch.name
-        .toLowerCase()
-        .replace(/\s+/g, "")}/${watch.colorMap[activeColor]}/${index}.png`;
+      img.src = `${basePath}/${index}.${ext}`;
 
       img.onload = () => {
         count++;
@@ -88,6 +99,11 @@ function WatchDetail() {
 
   const minPrice = Math.min(...watch.prices);
   const maxPrice = Math.max(...watch.prices);
+  const baseImage = resolveProductImage(watch.name, watch.colorMap[activeColor], "Watch");
+  const hasGallery = baseImage.startsWith("/assets/images/") && totalImages > 1;
+  const currentImage = hasGallery
+    ? baseImage.replace(/\/(\d+)\.(png|jpe?g|webp)$/i, `/${imageIndex}.$2`)
+    : baseImage;
 
   const handleBuy = () => {
     const client = localStorage.getItem("client");
@@ -95,7 +111,7 @@ function WatchDetail() {
     if (!client) {
       navigate("/login", {
         state: {
-          redirectTo: "/buyPhone",
+          redirectTo: "/buyWatch",
           payload: {
             product_name: watch.name,
             product_type: "Watch",
@@ -105,7 +121,7 @@ function WatchDetail() {
       return;
     }
 
-    navigate("/buyPhone", {
+    navigate("/buyWatch", {
       state: {
         product_name: watch.name,
         product_type: "Watch",
@@ -139,7 +155,7 @@ function WatchDetail() {
 
         {/* LEFT */}
         <div className="detail-left">
-          {totalImages > 1 && (
+          {hasGallery && (
             <>
               <button className="nav-btn left" onClick={prevImage}>
                 <FaChevronLeft />
@@ -147,17 +163,9 @@ function WatchDetail() {
             </>
           )}
 
-          <img
-            className="detail-image"
-            src={`/assets/images/Watch/${watch.name
-              .toLowerCase()
-              .replace(/\s+/g, "")}/${
-              watch.colorMap[activeColor]
-            }/${imageIndex}.png`}
-            alt={watch.name}
-          />
+          <img className="detail-image" src={currentImage} alt={watch.name} />
 
-          {totalImages > 1 && (
+          {hasGallery && (
             <>
               <button className="nav-btn right" onClick={nextImage}>
                 <FaChevronRight />

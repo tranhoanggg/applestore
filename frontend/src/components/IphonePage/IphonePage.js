@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./IphonePage.css";
 import { useNavigate } from "react-router-dom";
+import { resolveProductImage } from "../../utils/image";
 
 function IphonePage() {
   const navigate = useNavigate();
@@ -121,11 +122,11 @@ function IphonePage() {
 
               <div className="iphonepage-image">
                 <img
-                  src={`/assets/images/Iphone/${iphone.name
-                    .toLowerCase()
-                    .replace(/\s+/g, "")}/${
-                    iphone.colorMap[activeColor]
-                  }/1.png`}
+                  src={resolveProductImage(
+                    iphone.name,
+                    iphone.colorMap[activeColor],
+                    "Iphone"
+                  )}
                   alt={iphone.name}
                 />
               </div>
