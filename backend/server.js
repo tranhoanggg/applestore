@@ -1,10 +1,11 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const db = require("./db");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const db = require("./db");
+const bcrypt = require("bcryptjs");
 
 const app = express();
 app.use(cors());
@@ -19,36 +20,34 @@ const queryAsync = (sql, params = []) =>
   });
 
 // Secret dùng để ký/kiểm tra adminToken (giữ tên biến môi trường cũ để tương thích)
-const ADMIN_BOOTSTRAP_SECRET = process.env.ADMIN_BOOTSTRAP_SECRET || "change-me";
+const ADMIN_BOOTSTRAP_SECRET =
+  process.env.ADMIN_BOOTSTRAP_SECRET || "change-me";
 
 // Đảm bảo cột role tồn tại để phân quyền tài khoản
 function ensureRoleColumn(callback = () => {}) {
-  db.query(
-    "SHOW COLUMNS FROM client_account LIKE 'role'",
-    (err, results) => {
-      if (err) {
-        console.error("Không thể kiểm tra cột role", err);
-        return;
-      }
-
-      if (results.length === 0) {
-        db.query(
-          "ALTER TABLE client_account ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'",
-          (alterErr) => {
-            if (alterErr) {
-              console.error("Không thể thêm cột role", alterErr);
-              return;
-            } else {
-              console.log("Đã thêm cột role vào client_account");
-              callback();
-            }
-          }
-        );
-      } else {
-        callback();
-      }
+  db.query("SHOW COLUMNS FROM client_account LIKE 'role'", (err, results) => {
+    if (err) {
+      console.error("Không thể kiểm tra cột role", err);
+      return;
     }
-  );
+
+    if (results.length === 0) {
+      db.query(
+        "ALTER TABLE client_account ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'",
+        (alterErr) => {
+          if (alterErr) {
+            console.error("Không thể thêm cột role", alterErr);
+            return;
+          } else {
+            console.log("Đã thêm cột role vào client_account");
+            callback();
+          }
+        }
+      );
+    } else {
+      callback();
+    }
+  });
 }
 
 ensureRoleColumn(() => ensureDefaultAdmin());
@@ -177,7 +176,8 @@ const detectExtension = (dataUri = "", fallback = "png") => {
   const match = dataUri.match(/^data:image\/([a-zA-Z0-9+]+);base64,/);
   if (match && match[1]) {
     const ext = match[1].toLowerCase();
-    if (["png", "jpg", "jpeg", "webp"].includes(ext)) return ext === "jpg" ? "jpeg" : ext;
+    if (["png", "jpg", "jpeg", "webp"].includes(ext))
+      return ext === "jpg" ? "jpeg" : ext;
   }
   const nameExt = fallback.split(".").pop();
   return nameExt || "png";
@@ -187,7 +187,8 @@ const normalizeImageValue = (value) => {
   if (!value) return "";
   const trimmed = value.toString().trim();
   if (/^(https?:|data:|blob:)/i.test(trimmed)) return trimmed;
-  if (/^\/?assets\//i.test(trimmed)) return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  if (/^\/?assets\//i.test(trimmed))
+    return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   return normalizeSegment(trimmed);
 };
 
@@ -214,7 +215,9 @@ const writeImagesToAssets = ({ type, name, folder, images = [] }) => {
 
   const safeType = getTypeFolderName(type);
   const safeName = normalizeSegment(name);
-  const safeFolder = normalizeSegment(extractFolderSegment(folder) || "default");
+  const safeFolder = normalizeSegment(
+    extractFolderSegment(folder) || "default"
+  );
 
   if (!safeType || !safeName || !safeFolder) {
     return null;
@@ -241,7 +244,10 @@ const writeImagesToAssets = ({ type, name, folder, images = [] }) => {
   });
 
   // return db-friendly first image path
-  const firstExt = detectExtension(images[0]?.data || images[0], images[0]?.name || "png");
+  const firstExt = detectExtension(
+    images[0]?.data || images[0],
+    images[0]?.name || "png"
+  );
   return `/assets/images/${safeType}/${safeName}/${safeFolder}/1.${firstExt}`;
 };
 
@@ -274,7 +280,12 @@ function verifyAdminToken(token) {
       .update(serialized)
       .digest("hex");
 
-    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+    if (
+      !crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature)
+      )
+    ) {
       return null;
     }
 
@@ -298,9 +309,10 @@ const requireAdmin = (req, res, next) => {
 
   const tokenData = verifyAdminToken(token);
   if (!tokenData) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Thiếu hoặc sai thông tin xác thực admin" });
+    return res.status(401).json({
+      success: false,
+      message: "Thiếu hoặc sai thông tin xác thực admin",
+    });
   }
 
   db.query(
@@ -649,6 +661,67 @@ app.put("/client_account/password-reset", (req, res) => {
   );
 });
 
+// app.post("/login", (req, res) => {
+//   const { email, password } = req.body;
+
+//   if (!email || !password) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Thiếu email hoặc mật khẩu",
+//     });
+//   }
+
+//   db.query(
+//     "SELECT id, name, birthday, email, phone, password, role FROM client_account WHERE email = ?",
+//     [email],
+//     (err, results) => {
+//       if (err) {
+//         console.error("Không thể đăng nhập", err);
+//         return res.status(500).json({ success: false });
+//       }
+
+//       const user = results[0];
+//       if (!user || user.password !== password) {
+//         return res
+//           .status(401)
+//           .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
+//       }
+
+//       const normalizedUser = { ...user, role: user.role || "user" };
+//       delete normalizedUser.password;
+
+//       const response = { success: true, user: normalizedUser };
+//       if (normalizedUser.role === "admin") {
+//         response.adminToken = createAdminToken(user);
+//       }
+
+//       res.json(response);
+//     }
+//   );
+// });
+
+// app.post("/signup", (req, res) => {
+//   const { name, birthday, email, phone, password } = req.body;
+
+//   const sql = `
+//     INSERT INTO client_account (name, birthday, email, phone, password, role)
+//     VALUES (?, ?, ?, ?, ?, 'user')
+//   `;
+
+//   db.query(sql, [name, birthday, email, phone, password], (err, result) => {
+//     if (err) {
+//       console.error("Lỗi khi thêm người dùng:", err);
+//       return res.status(500).send("Lỗi khi tạo tài khoản người dùng");
+//     }
+
+//     res.json({
+//       success: true,
+//       message: "Tạo tài khoản thành công!",
+//       userId: result.insertId,
+//     });
+//   });
+// });
+
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -662,21 +735,35 @@ app.post("/login", (req, res) => {
   db.query(
     "SELECT id, name, birthday, email, phone, password, role FROM client_account WHERE email = ?",
     [email],
-    (err, results) => {
+    async (err, results) => {
+      // Thêm async
       if (err) {
         console.error("Không thể đăng nhập", err);
         return res.status(500).json({ success: false });
       }
 
       const user = results[0];
-      if (!user || user.password !== password) {
+
+      // Kiểm tra user tồn tại
+      if (!user) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
+      }
+
+      // [YÊU CẦU 2] So sánh mật khẩu nhập vào với mật khẩu đã băm trong DB
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      // Lưu ý: Nếu tài khoản cũ lưu pass chưa băm, logic này sẽ fail.
+      // Bạn có thể thêm điều kiện: if (!isMatch && password !== user.password) để hỗ trợ cả 2 tạm thời.
+      if (!isMatch) {
         return res
           .status(401)
           .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
       }
 
       const normalizedUser = { ...user, role: user.role || "user" };
-      delete normalizedUser.password;
+      delete normalizedUser.password; // Xóa pass trước khi gửi về client
 
       const response = { success: true, user: normalizedUser };
       if (normalizedUser.role === "admin") {
@@ -688,26 +775,45 @@ app.post("/login", (req, res) => {
   );
 });
 
-app.post("/signup", (req, res) => {
+app.post("/signup", async (req, res) => {
   const { name, birthday, email, phone, password } = req.body;
+
+  if (!email || !email.endsWith("@ptit.edu.vn")) {
+    return res.status(400).json({
+      success: false,
+      message: "Vui lòng sử dụng email sinh viên PTIT (@ptit.edu.vn)",
+    });
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
 
   const sql = `
     INSERT INTO client_account (name, birthday, email, phone, password, role)
     VALUES (?, ?, ?, ?, ?, 'user')
   `;
 
-  db.query(sql, [name, birthday, email, phone, password], (err, result) => {
-    if (err) {
-      console.error("Lỗi khi thêm người dùng:", err);
-      return res.status(500).send("Lỗi khi tạo tài khoản người dùng");
-    }
+  db.query(
+    sql,
+    [name, birthday, email, phone, hashedPassword],
+    (err, result) => {
+      if (err) {
+        console.error("Lỗi khi thêm người dùng:", err);
+        if (err.code === "ER_DUP_ENTRY") {
+          return res
+            .status(400)
+            .json({ success: false, message: "Email hoặc SĐT đã tồn tại" });
+        }
+        return res.status(500).send("Lỗi khi tạo tài khoản người dùng");
+      }
 
-    res.json({
-      success: true,
-      message: "Tạo tài khoản thành công!",
-      userId: result.insertId,
-    });
-  });
+      res.json({
+        success: true,
+        message: "Tạo tài khoản thành công!",
+        userId: result.insertId,
+      });
+    }
+  );
 });
 
 app.post("/iphones/pay", (req, res) => {
@@ -1069,9 +1175,9 @@ app.post("/watchs/pay", (req, res) => {
           product_id,
           product_type,
           color,
-          "",   // capacity
-          "",   // ram
-          "",   // rom
+          "", // capacity
+          "", // ram
+          "", // rom
           address_detail,
           commune,
           district,
@@ -1399,7 +1505,6 @@ app.post("/cart/pay", (req, res) => {
                 res.status(500).json({ success: false });
               });
             }
-
             commitTransaction();
           });
         };
@@ -1530,7 +1635,7 @@ app.get("/bill-full/:billId", async (req, res) => {
     if (billDetails.length > 0) {
       items = await Promise.all(
         billDetails.map((detail) => {
-        const tableName = TABLE_NAME_BY_TYPE[detail.type];
+          const tableName = TABLE_NAME_BY_TYPE[detail.type];
 
           if (!tableName) {
             return { ...detail, product: null };
@@ -1553,7 +1658,7 @@ app.get("/bill-full/:billId", async (req, res) => {
         })
       );
     } else if (bill.product_id) {
-    const tableName = TABLE_NAME_BY_TYPE[bill.product_type];
+      const tableName = TABLE_NAME_BY_TYPE[bill.product_type];
 
       if (tableName) {
         const product = await new Promise((resolve, reject) => {
@@ -1698,9 +1803,234 @@ app.put("/bill/cancel/:billId", async (req, res) => {
   }
 });
 
-// =========================
-// ADMIN APIs
-// =========================
+app.post("/bill/re-order", (req, res) => {
+  const {
+    old_bill_id, // ID của đơn hàng cũ cần xoá để tạo lại
+    user_id,
+    name,
+    phone,
+    payment_method,
+    bank,
+    payment_status,
+    address_detail,
+    commune,
+    district,
+    city,
+    date,
+    cartItems,
+  } = req.body;
+
+  // Validate dữ liệu đầu vào
+  if (!user_id || !cartItems?.length || !old_bill_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Thiếu dữ liệu mua lại (Cần old_bill_id, user_id, items)",
+    });
+  }
+
+  const TABLE_MAP = {
+    Iphone: "iphone",
+    Ipad: "ipad",
+    Mac: "mac",
+    Watch: "watch",
+  };
+
+  db.beginTransaction((err) => {
+    if (err) {
+      console.error("Begin transaction error", err);
+      return res.status(500).json({ success: false });
+    }
+
+    /* ===== 1. XOÁ BILL DETAIL CŨ ===== */
+    const deleteOldBillDetailSql = "DELETE FROM bill_detail WHERE bill_id = ?";
+    db.query(deleteOldBillDetailSql, [old_bill_id], (err) => {
+      if (err) {
+        return db.rollback(() => {
+          console.error("Error deleting old bill_detail", err);
+          res
+            .status(500)
+            .json({ success: false, message: "Lỗi xoá chi tiết đơn cũ" });
+        });
+      }
+
+      /* ===== 2. XOÁ BILL CŨ ===== */
+      const deleteOldBillSql = "DELETE FROM bill WHERE id = ?";
+      db.query(deleteOldBillSql, [old_bill_id], (err) => {
+        if (err) {
+          return db.rollback(() => {
+            console.error("Error deleting old bill", err);
+            res.status(500).json({ success: false, message: "Lỗi xoá đơn cũ" });
+          });
+        }
+
+        // Sau khi xoá xong đơn cũ, tiến hành quy trình tạo đơn mới
+        createNewBill();
+      });
+    });
+
+    /* ===== HÀM TẠO ĐƠN MỚI (Tương tự logic pay cũ) ===== */
+    const createNewBill = () => {
+      const insertBillSql = `
+        INSERT INTO bill (
+          user_id, name, phone, product_type, color, capacity, ram, rom,
+          address_detail, commune, district, city, date,
+          payment_method, bank, payment_status
+        )
+        VALUES (?, ?, ?, '', '', '', '', '', ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      db.query(
+        insertBillSql,
+        [
+          user_id,
+          name,
+          phone,
+          address_detail,
+          commune,
+          district,
+          city,
+          date,
+          payment_method,
+          bank,
+          payment_status,
+        ],
+        (err, billResult) => {
+          if (err) {
+            return db.rollback(() => {
+              console.error("Insert new bill error", err);
+              res.status(500).json({ success: false });
+            });
+          }
+
+          const new_bill_id = billResult.insertId;
+
+          /* ===== 3. TRỪ KHO (Giữ nguyên logic cũ) ===== */
+          const deductStock = (index = 0) => {
+            if (index >= cartItems.length) {
+              return insertBillDetail(new_bill_id);
+            }
+
+            const item = cartItems[index];
+            const table = TABLE_MAP[item.type];
+
+            if (!table) {
+              return db.rollback(() => {
+                res.status(400).json({
+                  success: false,
+                  message: `Loại sản phẩm không hợp lệ: ${item.type}`,
+                });
+              });
+            }
+
+            const updateStockSql = `
+              UPDATE ${table}
+              SET quantity = quantity - ?
+              WHERE id = ? AND quantity >= ?
+            `;
+
+            db.query(
+              updateStockSql,
+              [item.quantity, item.product_id, item.quantity],
+              (err, result) => {
+                if (err || result.affectedRows === 0) {
+                  return db.rollback(() => {
+                    res.status(400).json({
+                      success: false,
+                      message: `Sản phẩm ${item.product_id} (${item.type}) không đủ hàng`,
+                    });
+                  });
+                }
+                deductStock(index + 1);
+              }
+            );
+          };
+
+          /* ===== 4. INSERT BILL DETAIL MỚI ===== */
+          const insertBillDetail = (billId) => {
+            const insertDetailSql = `
+              INSERT INTO bill_detail (bill_id, product_id, quantity, type)
+              VALUES ?
+            `;
+
+            const values = cartItems.map((item) => [
+              billId,
+              item.product_id,
+              item.quantity,
+              item.type,
+            ]);
+
+            db.query(insertDetailSql, [values], (err) => {
+              if (err) {
+                return db.rollback(() => {
+                  console.error("Insert bill_detail error", err);
+                  res.status(500).json({ success: false });
+                });
+              }
+
+              // KHÔNG GỌI deleteCart() Ở ĐÂY
+              commitTransaction(billId);
+            });
+          };
+
+          // Bắt đầu trừ kho
+          deductStock();
+        }
+      );
+    };
+
+    /* ===== 5. COMMIT ===== */
+    const commitTransaction = (finalBillId) => {
+      db.commit((err) => {
+        if (err) {
+          return db.rollback(() => {
+            console.error("Commit error", err);
+            res.status(500).json({ success: false });
+          });
+        }
+
+        res.json({
+          success: true,
+          message: "Mua lại thành công (đã thay thế đơn cũ)",
+          bill_id: finalBillId,
+        });
+      });
+    };
+  });
+});
+
+app.get("/api/products/:type/:name/related", async (req, res) => {
+  const { type, name } = req.params;
+
+  // ... (đoạn validate type giữ nguyên) ...
+  const allowedTables = ["iphone", "ipad", "mac", "watch"];
+  if (!allowedTables.includes(type)) {
+    return res.status(400).json({ message: "Invalid product type" });
+  }
+
+  try {
+    const sql = `SELECT * FROM ${type} WHERE name != ?`;
+
+    const [rows] = await db.promise().query(sql, [name]);
+
+    // ... (đoạn xử lý lọc trùng giữ nguyên) ...
+    const uniqueProducts = {};
+    rows.forEach((row) => {
+      if (!uniqueProducts[row.name]) {
+        uniqueProducts[row.name] = row;
+      }
+    });
+
+    const result = Object.values(uniqueProducts)
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 4);
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching related products:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 app.post("/admin/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -1721,20 +2051,22 @@ app.post("/admin/login", (req, res) => {
 
       const user = results[0];
       if (!user || user.role !== "admin") {
-        return res
-          .status(401)
-          .json({ success: false, message: "Thông tin đăng nhập không hợp lệ" });
+        return res.status(401).json({
+          success: false,
+          message: "Thông tin đăng nhập không hợp lệ",
+        });
       }
 
       const token = createAdminToken(user);
-      res.json({ success: true, token, user: { ...user, role: user.role || "admin" } });
+      res.json({
+        success: true,
+        token,
+        user: { ...user, role: user.role || "admin" },
+      });
     }
   );
 });
 
-// =========================
-// ADMIN APIs
-// =========================
 app.get("/admin/bills", requireAdmin, async (req, res) => {
   try {
     const bills = await queryAsync(
@@ -1816,7 +2148,9 @@ app.post("/admin/products/:type", requireAdmin, (req, res) => {
   const config = PRODUCT_TABLES[type];
 
   if (!config) {
-    return res.status(400).json({ success: false, message: "Loại sản phẩm không hợp lệ" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Loại sản phẩm không hợp lệ" });
   }
 
   const missing = config.fields.filter((f) => req.body[f] === undefined);
@@ -1845,18 +2179,14 @@ app.post("/admin/products/:type", requireAdmin, (req, res) => {
     payload.image = normalizeImageValue(payload.image);
   }
 
-  db.query(
-    `INSERT INTO ${config.table} SET ?`,
-    payload,
-    (err, result) => {
-      if (err) {
-        console.error("Không thể thêm sản phẩm", err);
-        return res.status(500).json({ success: false });
-      }
-
-      res.json({ success: true, id: result.insertId });
+  db.query(`INSERT INTO ${config.table} SET ?`, payload, (err, result) => {
+    if (err) {
+      console.error("Không thể thêm sản phẩm", err);
+      return res.status(500).json({ success: false });
     }
-  );
+
+    res.json({ success: true, id: result.insertId });
+  });
 });
 
 app.put("/admin/products/:type/:id", requireAdmin, (req, res) => {
@@ -1865,7 +2195,9 @@ app.put("/admin/products/:type/:id", requireAdmin, (req, res) => {
   const id = req.params.id;
 
   if (!config) {
-    return res.status(400).json({ success: false, message: "Loại sản phẩm không hợp lệ" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Loại sản phẩm không hợp lệ" });
   }
 
   const payload = {};
@@ -1879,7 +2211,8 @@ app.put("/admin/products/:type/:id", requireAdmin, (req, res) => {
     const savedPath = writeImagesToAssets({
       type,
       name: req.body.name || payload.name,
-      folder: req.body.image || req.body.color || payload.image || payload.color,
+      folder:
+        req.body.image || req.body.color || payload.image || payload.color,
       images: req.body.images,
     });
 
@@ -1891,7 +2224,9 @@ app.put("/admin/products/:type/:id", requireAdmin, (req, res) => {
   }
 
   if (Object.keys(payload).length === 0) {
-    return res.status(400).json({ success: false, message: "Không có dữ liệu cập nhật" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Không có dữ liệu cập nhật" });
   }
 
   db.query(
@@ -1920,27 +2255,25 @@ app.delete("/admin/products/:type/:id", requireAdmin, (req, res) => {
   const id = req.params.id;
 
   if (!config) {
-    return res.status(400).json({ success: false, message: "Loại sản phẩm không hợp lệ" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Loại sản phẩm không hợp lệ" });
   }
 
-  db.query(
-    `DELETE FROM ${config.table} WHERE id = ?`,
-    [id],
-    (err, result) => {
-      if (err) {
-        console.error("Không thể xóa sản phẩm", err);
-        return res.status(500).json({ success: false });
-      }
-
-      if (result.affectedRows === 0) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Không tìm thấy sản phẩm" });
-      }
-
-      res.json({ success: true });
+  db.query(`DELETE FROM ${config.table} WHERE id = ?`, [id], (err, result) => {
+    if (err) {
+      console.error("Không thể xóa sản phẩm", err);
+      return res.status(500).json({ success: false });
     }
-  );
+
+    if (result.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy sản phẩm" });
+    }
+
+    res.json({ success: true });
+  });
 });
 
 app.put("/admin/users/:id/role", requireAdmin, (req, res) => {
@@ -1983,6 +2316,209 @@ app.get("/details/:name", (req, res) => {
       return res.status(500).send("Lỗi khi lấy dữ liệu details");
     }
     res.json(results);
+  });
+});
+
+app.post("/admin/users/:id/ban", requireAdmin, (req, res) => {
+  const clientId = req.params.id; // Lấy ID từ URL
+  const { duration, reason } = req.body; // Lấy dữ liệu từ body
+
+  // 1. Validate
+  if (!clientId || !duration) {
+    return res.status(400).json({
+      success: false,
+      message: "Thiếu ID người dùng hoặc thời gian cấm.",
+    });
+  }
+
+  // 2. Bảo mật: Không cho admin ban chính mình
+  // (Lưu ý: đảm bảo client_account có cột role và requireAdmin đã gán req.admin)
+  if (req.admin && req.admin.id == clientId) {
+    return res.status(400).json({
+      success: false,
+      message: "Bạn không thể tự cấm chính mình!",
+    });
+  }
+
+  // 3. Tính toán thời gian mở khoá (banned_until)
+  let bannedUntil;
+
+  if (duration === "permanent") {
+    // Nếu là vĩnh viễn, set năm 9999
+    bannedUntil = new Date("9999-12-31 23:59:59");
+  } else {
+    // Nếu là giờ, cộng thêm vào thời gian hiện tại
+    // duration từ frontend gửi lên là GIỜ (hours)
+    const hoursToAdd = parseInt(duration);
+    bannedUntil = new Date(Date.now() + hoursToAdd * 60 * 60 * 1000);
+  }
+
+  // 4. Update Database
+  const sql = `
+    UPDATE client_account 
+    SET banned_until = ?, ban_reason = ? 
+    WHERE id = ?
+  `;
+
+  db.query(sql, [bannedUntil, reason, clientId], (err, result) => {
+    if (err) {
+      console.error("Lỗi khi ban user:", err);
+      return res.status(500).json({ success: false, message: "Lỗi Server" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng.",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Đã cấm người dùng ID ${clientId} thành công.`,
+      banned_until: bannedUntil,
+    });
+  });
+});
+
+app.put("/admin/users/:id/unban", requireAdmin, (req, res) => {
+  const clientId = req.params.id; // Lấy ID từ URL
+
+  if (!clientId) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Thiếu ID người dùng" });
+  }
+
+  // Set banned_until và ban_reason về NULL
+  const sql = `
+    UPDATE client_account 
+    SET banned_until = NULL, ban_reason = NULL 
+    WHERE id = ?
+  `;
+
+  db.query(sql, [clientId], (err, result) => {
+    if (err) {
+      console.error("Lỗi khi unban:", err);
+      return res.status(500).json({ success: false, message: "Lỗi Server" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng.",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Đã gỡ cấm cho tài khoản ID ${clientId}.`,
+    });
+  });
+});
+
+// --- API GHI NHẬN HÀNH VI (LOGGING) ---
+app.post("/api/log-behavior", (req, res) => {
+  const { user_identifier, action_type, action_detail } = req.body;
+
+  // Lấy IP nếu user_identifier không được gửi lên (fallback)
+  const userIp =
+    user_identifier ||
+    req.headers["x-forwarded-for"] ||
+    req.socket.remoteAddress;
+
+  const sql =
+    "INSERT INTO user_logs (user_identifier, action_type, action_detail) VALUES (?, ?, ?)";
+  db.query(sql, [userIp, action_type, action_detail], (err, result) => {
+    if (err) {
+      console.error("Lỗi ghi log:", err);
+      return res.status(500).json({ error: "Lỗi Server" });
+    }
+    res.json({ success: true });
+  });
+});
+
+// --- API THỐNG KÊ HÀNH VI (CHO DASHBOARD) ---
+app.get("/api/log-stats", (req, res) => {
+  // Query 1: Lấy danh sách chi tiết (giới hạn 50 dòng mới nhất)
+  const sqlLogs = "SELECT * FROM user_logs ORDER BY created_at DESC LIMIT 50";
+
+  // Query 2: Thống kê số lượng theo loại hành vi
+  const sqlStats =
+    "SELECT action_type, COUNT(*) as count FROM user_logs GROUP BY action_type";
+
+  db.query(sqlLogs, (err, logs) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    db.query(sqlStats, (err2, stats) => {
+      if (err2) return res.status(500).json({ error: err2.message });
+      res.json({ logs, stats });
+    });
+  });
+});
+
+app.get("/api/ratings/:productName", (req, res) => {
+  const { productName } = req.params;
+  const userId = req.headers["x-user-id"];
+
+  const sqlStats = `
+    SELECT 
+      COUNT(*) as total_count, 
+      AVG(rating) as average_rating 
+    FROM product_ratings 
+    WHERE product_name = ?
+  `;
+
+  const sqlMyRating = `
+    SELECT rating, comment FROM product_ratings 
+    WHERE product_name = ? AND user_id = ?
+  `;
+
+  db.query(sqlStats, [productName], (err, stats) => {
+    if (err) return res.status(500).json({ error: "Lỗi Server" });
+
+    const result = {
+      total_count: stats[0].total_count || 0,
+      average_rating: parseFloat(stats[0].average_rating || 0).toFixed(1),
+      my_rating: null,
+    };
+
+    if (userId) {
+      db.query(sqlMyRating, [productName, userId], (err2, myRate) => {
+        if (!err2 && myRate.length > 0) {
+          result.my_rating = myRate[0];
+        }
+        res.json(result);
+      });
+    } else {
+      res.json(result);
+    }
+  });
+});
+
+app.post("/api/ratings", (req, res) => {
+  const { user_id, product_name, rating, comment } = req.body;
+
+  if (!user_id) return res.status(401).json({ message: "Vui lòng đăng nhập!" });
+  if (rating < 1 || rating > 5)
+    return res.status(400).json({ message: "Điểm sao không hợp lệ" });
+
+  const sql = `
+    INSERT INTO product_ratings (user_id, product_name, rating, comment) 
+    VALUES (?, ?, ?, ?)
+  `;
+
+  db.query(sql, [user_id, product_name, rating, comment], (err, result) => {
+    if (err) {
+      if (err.code === "ER_DUP_ENTRY") {
+        return res
+          .status(400)
+          .json({ message: "Bạn đã đánh giá sản phẩm này rồi." });
+      }
+      console.error(err);
+      return res.status(500).json({ message: "Lỗi hệ thống" });
+    }
+    res.json({ success: true, message: "Đánh giá thành công!" });
   });
 });
 
