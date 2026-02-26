@@ -34,7 +34,7 @@ const BuyMac = () => {
 
   // FETCH SẢN PHẨM
   useEffect(() => {
-    fetch(`http://localhost:5000/macs/buy/${state.product_name}`)
+    fetch(`${process.env.REACT_APP_API_URL}/macs/buy/${state.product_name}`)
       .then((res) => res.json())
       .then((data) => {
         setVariants(data);
@@ -46,7 +46,7 @@ const BuyMac = () => {
         setSelectedRam(firstRam);
 
         const firstRom = data.find(
-          (v) => v.color === firstColor && v.ram === firstRam
+          (v) => v.color === firstColor && v.ram === firstRam,
         )?.rom;
         setSelectedRom(firstRom);
       });
@@ -59,7 +59,7 @@ const BuyMac = () => {
       (v) =>
         v.color === selectedColor &&
         v.ram === selectedRam &&
-        v.rom === selectedRom
+        v.rom === selectedRom,
     );
 
     setCurrentProduct(product);
@@ -96,7 +96,7 @@ const BuyMac = () => {
 
   const rams = [
     ...new Set(
-      variants.filter((v) => v.color === selectedColor).map((v) => v.ram)
+      variants.filter((v) => v.color === selectedColor).map((v) => v.ram),
     ),
   ];
 
@@ -104,7 +104,7 @@ const BuyMac = () => {
     ...new Set(
       variants
         .filter((v) => v.color === selectedColor && v.ram === selectedRam)
-        .map((v) => v.rom)
+        .map((v) => v.rom),
     ),
   ];
 
@@ -189,7 +189,7 @@ const BuyMac = () => {
       payment_status,
     };
 
-    const res = await fetch("http://localhost:5000/macs/pay", {
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/macs/pay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -206,7 +206,7 @@ const BuyMac = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/add_to_cart", {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/add_to_cart`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -228,7 +228,7 @@ const BuyMac = () => {
       window.dispatchEvent(new Event("cart-updated"));
 
       const goToCart = window.confirm(
-        "Đã thêm sản phẩm vào giỏ hàng thành công!\n\nNhấn OK để tới giỏ hàng\nNhấn Huỷ để về trang chủ"
+        "Đã thêm sản phẩm vào giỏ hàng thành công!\n\nNhấn OK để tới giỏ hàng\nNhấn Huỷ để về trang chủ",
       );
 
       if (goToCart) {
@@ -260,7 +260,7 @@ const BuyMac = () => {
                     src={resolveProductImage(
                       currentProduct.name,
                       currentProduct.image,
-                      "Mac"
+                      "Mac",
                     )}
                     alt={currentProduct.name}
                     className="buy-image"
@@ -365,7 +365,7 @@ const BuyMac = () => {
                           setSelectedRam(cap);
 
                           const firstRom = variants.find(
-                            (v) => v.color === selectedColor && v.ram === cap
+                            (v) => v.color === selectedColor && v.ram === cap,
                           )?.rom;
 
                           setSelectedRom(firstRom);

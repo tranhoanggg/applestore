@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import "./WatchDetail.css";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { resolveProductImage } from "../../utils/image";
+import RelatedProducts from "../Product/RelatedProducts";
+import { logBehavior, ACTION_TYPES } from "../../utils/logger";
 
 function WatchDetail() {
   const { name } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const decodedName = decodeURIComponent(name);
 
@@ -17,9 +20,21 @@ function WatchDetail() {
   const [totalImages, setTotalImages] = useState(1);
   const [fadeout, setFadeout] = useState(false);
 
+  useEffect(() => {
+    if (name) {
+      logBehavior(
+        ACTION_TYPES.VIEW,
+        `Xem chi tiết: ${decodeURIComponent(name)}`,
+      );
+    }
+  }, [name]);
+
   /* ===== fetch watch info ===== */
   useEffect(() => {
-    fetch("http://localhost:5000/watchs")
+    setFadeout(false);
+    setWatch(null);
+
+    fetch(`${process.env.REACT_APP_API_URL}/watchs`)
       .then((res) => res.json())
       .then((data) => {
         const filtered = data.filter((p) => p.name.trim() === decodedName);
@@ -46,13 +61,25 @@ function WatchDetail() {
           colorMap,
         });
 
-        setActiveColor(colors[0].code);
+        const preSelectedColor = location.state?.preSelectedColor;
+
+        // Kiểm tra xem màu truyền vào có tồn tại trong danh sách màu của sp này không
+        const isColorValid =
+          preSelectedColor && colors.some((c) => c.code === preSelectedColor);
+
+        if (isColorValid) {
+          setActiveColor(preSelectedColor); // Dùng màu từ RelatedProducts
+        } else {
+          setActiveColor(colors[0].code); // Dùng màu mặc định
+        }
       });
   }, [decodedName]);
 
   /* ===== fetch detail text ===== */
   useEffect(() => {
-    fetch(`http://localhost:5000/details/${encodeURIComponent(decodedName)}`)
+    fetch(
+      `${process.env.REACT_APP_API_URL}/details/${encodeURIComponent(decodedName)}`,
+    )
       .then((res) => res.json())
       .then(setDetails)
       .catch(console.error);
@@ -61,7 +88,11 @@ function WatchDetail() {
   useEffect(() => {
     if (!watch || !activeColor) return;
 
-    const baseImage = resolveProductImage(watch.name, watch.colorMap[activeColor], "Watch");
+    const baseImage = resolveProductImage(
+      watch.name,
+      watch.colorMap[activeColor],
+      "Watch",
+    );
 
     if (!baseImage.startsWith("/assets/images/")) {
       setTotalImages(1);
@@ -99,13 +130,18 @@ function WatchDetail() {
 
   const minPrice = Math.min(...watch.prices);
   const maxPrice = Math.max(...watch.prices);
-  const baseImage = resolveProductImage(watch.name, watch.colorMap[activeColor], "Watch");
+  const baseImage = resolveProductImage(
+    watch.name,
+    watch.colorMap[activeColor],
+    "Watch",
+  );
   const hasGallery = baseImage.startsWith("/assets/images/") && totalImages > 1;
   const currentImage = hasGallery
     ? baseImage.replace(/\/(\d+)\.(png|jpe?g|webp)$/i, `/${imageIndex}.$2`)
     : baseImage;
 
   const handleBuy = () => {
+    logBehavior(ACTION_TYPES.CLICK, `Bấm mua ngay: ${watch.name}`);
     const client = localStorage.getItem("client");
 
     if (!client) {
@@ -146,71 +182,77 @@ function WatchDetail() {
   };
 
   return (
-    <div className={`watch-detail-overlay ${fadeout ? "fade-out" : ""}`}>
-      <div className="watch-detail-modal">
-        {/* CLOSE */}
-        <button className="close-btn" onClick={handleBack}>
-          ✕
-        </button>
+    <div className={`watch-detail-page ${fadeout ? "fade-out" : ""}`}>
+      <div className={`watch-detail-overlay`}>
+        <div className="watch-detail-modal">
+          {/* CLOSE */}
+          <button className="close-btn" onClick={handleBack}>
+            ✕
+          </button>
 
-        {/* LEFT */}
-        <div className="detail-left">
-          {hasGallery && (
-            <>
-              <button className="nav-btn left" onClick={prevImage}>
-                <FaChevronLeft />
+          {/* LEFT */}
+          <div className="detail-left">
+            {hasGallery && (
+              <>
+                <button className="nav-btn left" onClick={prevImage}>
+                  <FaChevronLeft />
+                </button>
+              </>
+            )}
+
+            <img className="detail-image" src={currentImage} alt={watch.name} />
+
+            {hasGallery && (
+              <>
+                <button className="nav-btn right" onClick={nextImage}>
+                  <FaChevronRight />
+                </button>
+              </>
+            )}
+
+            {/* color dots */}
+            <div className="detail-dots">
+              {watch.colors.map((c) => (
+                <span
+                  key={c.code}
+                  className={
+                    "color-dot" + (activeColor === c.code ? " active" : "")
+                  }
+                  style={{ backgroundColor: c.code }}
+                  onClick={() => setActiveColor(c.code)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT */}
+          <div className="detail-right">
+            <span className="badge-new">MỚI</span>
+
+            <h1>{watch.name}</h1>
+
+            <div className="price-container">
+              <p className="price-range">
+                Từ {minPrice.toLocaleString("vi-VN")}đ đến{" "}
+                {maxPrice.toLocaleString("vi-VN")}đ
+              </p>
+
+              <button className="buy-btn" onClick={handleBuy}>
+                Mua
               </button>
-            </>
-          )}
+            </div>
 
-          <img className="detail-image" src={currentImage} alt={watch.name} />
-
-          {hasGallery && (
-            <>
-              <button className="nav-btn right" onClick={nextImage}>
-                <FaChevronRight />
-              </button>
-            </>
-          )}
-
-          {/* color dots */}
-          <div className="detail-dots">
-            {watch.colors.map((c) => (
-              <span
-                key={c.code}
-                className={
-                  "color-dot" + (activeColor === c.code ? " active" : "")
-                }
-                style={{ backgroundColor: c.code }}
-                onClick={() => setActiveColor(c.code)}
-              />
-            ))}
+            <div className="detail-list">
+              {details.map((d) => (
+                <p key={d.id}>{d.detail}</p>
+              ))}
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* RIGHT */}
-        <div className="detail-right">
-          <span className="badge-new">MỚI</span>
-
-          <h1>{watch.name}</h1>
-
-          <div className="price-container">
-            <p className="price-range">
-              Từ {minPrice.toLocaleString("vi-VN")}đ đến{" "}
-              {maxPrice.toLocaleString("vi-VN")}đ
-            </p>
-
-            <button className="buy-btn" onClick={handleBuy}>
-              Mua
-            </button>
-          </div>
-
-          <div className="detail-list">
-            {details.map((d) => (
-              <p key={d.id}>{d.detail}</p>
-            ))}
-          </div>
-        </div>
+      <div className="container">
+        <RelatedProducts type="watch" currentName={watch.name} />
       </div>
     </div>
   );

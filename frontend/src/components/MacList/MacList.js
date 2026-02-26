@@ -21,7 +21,7 @@ function MacList() {
   const [itemWidth, setItemWidth] = useState(220);
 
   useEffect(() => {
-    fetch("http://localhost:5000/macs")
+    fetch(`${process.env.REACT_APP_API_URL}/macs`)
       .then((res) => res.json())
       .then((data) => {
         const grouped = {};
@@ -83,7 +83,7 @@ function MacList() {
       if (!viewportRef.current) return;
       const w = viewportRef.current.clientWidth;
       const computed = Math.floor(
-        (w - gap * (itemsPerPage - 1)) / itemsPerPage
+        (w - gap * (itemsPerPage - 1)) / itemsPerPage,
       );
       setItemWidth(computed > 100 ? computed : 120);
     }
@@ -231,6 +231,11 @@ function MacList() {
                 key={`${mac.ID}-${idx}`}
                 className="mac-card"
                 style={{ width: `${itemWidth}px`, minWidth: `${itemWidth}px` }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  navigate(`/mac/${mac.name}`);
+                }}
               >
                 {mac.hasNew && (
                   <img
@@ -253,7 +258,7 @@ function MacList() {
                       src={resolveProductImage(
                         mac.name,
                         mac.colorMap[activeColors[mac.name]],
-                        "Mac"
+                        "Mac",
                       )}
                     />
                   </div>
@@ -282,13 +287,26 @@ function MacList() {
                   {/* Button buy */}
                   <div className="maclist-btn-container">
                     <button className="maclist btn information">
-                      <span className="more-text">THÔNG TIN SẢN PHẨM</span>
+                      <span
+                        className="more-text"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          navigate(`/mac/${mac.name}`);
+                        }}
+                      >
+                        THÔNG TIN SẢN PHẨM
+                      </span>
                     </button>
 
                     <button className="maclist btn buy">
                       <span
                         className="buy-text"
-                        onClick={() => handleBuyNow(mac)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleBuyNow(mac);
+                        }}
                       >
                         MUA NGAY
                       </span>

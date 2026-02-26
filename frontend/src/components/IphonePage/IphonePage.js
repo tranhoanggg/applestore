@@ -16,7 +16,7 @@ function IphonePage() {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5000/iphones")
+    fetch(`${process.env.REACT_APP_API_URL}/iphones`)
       .then((res) => res.json())
       .then((data) => {
         const grouped = {};
@@ -109,7 +109,15 @@ function IphonePage() {
           const activeColor = activeColors[iphone.name];
 
           return (
-            <article key={iphone.name} className="iphonepage-card">
+            <article
+              key={iphone.name}
+              className="iphonepage-card"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                navigate(`/iphone/${iphone.name}`);
+              }}
+            >
               {iphone.hasNew && (
                 <img
                   className="iphonepage-badge"
@@ -125,7 +133,7 @@ function IphonePage() {
                   src={resolveProductImage(
                     iphone.name,
                     iphone.colorMap[activeColor],
-                    "Iphone"
+                    "Iphone",
                   )}
                   alt={iphone.name}
                 />
@@ -154,6 +162,7 @@ function IphonePage() {
                 <button
                   className="btn info"
                   onClick={(e) => {
+                    e.stopPropagation();
                     e.preventDefault();
                     navigate(`/iphone/${iphone.name}`);
                   }}
@@ -162,7 +171,11 @@ function IphonePage() {
                 </button>
                 <button
                   className="btn buy"
-                  onClick={() => handleBuyNow(iphone)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleBuyNow(iphone);
+                  }}
                 >
                   MUA NGAY
                 </button>

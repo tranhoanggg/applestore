@@ -44,7 +44,7 @@ export default function CheckoutSummary() {
       {
         threshold: 1,
         rootMargin: "-42px 0px 0px 0px",
-      }
+      },
     );
 
     observer.observe(payBtnRef.current);
@@ -61,7 +61,7 @@ export default function CheckoutSummary() {
       {
         threshold: 0.5,
         rootMargin: "-42px 0px 0px 0px",
-      }
+      },
     );
 
     observer.observe(finalPayBtnRef.current);
@@ -74,15 +74,17 @@ export default function CheckoutSummary() {
 
   const loadCart = async () => {
     try {
-      const cartRes = await fetch(`http://localhost:5000/cart/${client.id}`);
+      const cartRes = await fetch(
+        `${process.env.REACT_APP_API_URL}/cart/${client.id}`,
+      );
       const cartData = await cartRes.json();
 
       const items = await Promise.all(
         cartData.map(async (item) => {
           const productRes = await fetch(
-            `http://localhost:5000/${item.type.toLowerCase()}/${
+            `${process.env.REACT_APP_API_URL}/${item.type.toLowerCase()}/${
               item.product_id
-            }`
+            }`,
           );
           const productData = await productRes.json();
 
@@ -92,7 +94,7 @@ export default function CheckoutSummary() {
             quantity: item.quantity,
             product: productData[0],
           };
-        })
+        }),
       );
 
       setCartItems(items);
@@ -118,7 +120,7 @@ export default function CheckoutSummary() {
 
   const updateQuantity = async (item, action) => {
     try {
-      await fetch("http://localhost:5000/cart/update-quantity", {
+      await fetch(`${process.env.REACT_APP_API_URL}/cart/update-quantity`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -137,20 +139,23 @@ export default function CheckoutSummary() {
 
   const deleteCartItem = async (item) => {
     const confirmDelete = window.confirm(
-      "Bạn có chắc muốn xoá sản phẩm này khỏi giỏ hàng?"
+      "Bạn có chắc muốn xoá sản phẩm này khỏi giỏ hàng?",
     );
     if (!confirmDelete) return;
 
     try {
-      const res = await fetch("http://localhost:5000/cart/delete-item", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: client.id,
-          product_id: item.product.id,
-          type: item.type,
-        }),
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/cart/delete-item`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: client.id,
+            product_id: item.product.id,
+            type: item.type,
+          }),
+        },
+      );
 
       const data = await res.json();
 
@@ -162,7 +167,9 @@ export default function CheckoutSummary() {
       window.dispatchEvent(new Event("cart-updated"));
 
       // reload cart
-      const cartRes = await fetch(`http://localhost:5000/cart/${client.id}`);
+      const cartRes = await fetch(
+        `${process.env.REACT_APP_API_URL}/cart/${client.id}`,
+      );
       const cartData = await cartRes.json();
 
       if (!cartData.length) {
@@ -268,7 +275,7 @@ export default function CheckoutSummary() {
       })),
     };
 
-    const res = await fetch("http://localhost:5000/cart/pay", {
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/cart/pay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -279,6 +286,8 @@ export default function CheckoutSummary() {
     if (!data.success) {
       throw new Error(data.message || "Checkout failed");
     }
+
+    window.dispatchEvent(new Event("cart-updated"));
 
     return data; // { success, bill_id }
   };
@@ -354,7 +363,10 @@ export default function CheckoutSummary() {
         .some(
           (field) =>
             field.toString().toLowerCase().includes(key) ||
-            field.toString().toLowerCase().includes(key.toLocaleString("vi-VN"))
+            field
+              .toString()
+              .toLowerCase()
+              .includes(key.toLocaleString("vi-VN")),
         );
     });
 
@@ -429,7 +441,16 @@ export default function CheckoutSummary() {
 
           <p className="sub-note">Vận chuyển miễn phí đối với mọi đơn hàng.</p>
 
-          <button ref={payBtnRef} className="main-pay-btn">
+          <button
+            ref={payBtnRef}
+            className="main-pay-btn"
+            onClick={() => {
+              transactionRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }}
+          >
             Thanh toán
           </button>
         </div>
@@ -589,7 +610,7 @@ export default function CheckoutSummary() {
                         showQR ||
                         (payMethod === "counter" &&
                           ["address", "ward", "district", "province"].includes(
-                            field
+                            field,
                           ))
                       }
                       value={receiver[field]}

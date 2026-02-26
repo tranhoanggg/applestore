@@ -21,7 +21,7 @@ function IphoneList() {
   const [itemWidth, setItemWidth] = useState(220);
 
   useEffect(() => {
-    fetch("http://localhost:5000/iphones")
+    fetch(`${process.env.REACT_APP_API_URL}/iphones`)
       .then((res) => res.json())
       .then((data) => {
         // === 1. Gom nhóm theo name ===
@@ -85,7 +85,7 @@ function IphoneList() {
       if (!viewportRef.current) return;
       const w = viewportRef.current.clientWidth;
       const computed = Math.floor(
-        (w - gap * (itemsPerPage - 1)) / itemsPerPage
+        (w - gap * (itemsPerPage - 1)) / itemsPerPage,
       );
       setItemWidth(computed > 100 ? computed : 120);
     }
@@ -250,6 +250,11 @@ function IphoneList() {
                 key={`${iphone.ID}-${idx}`}
                 className="iphone-card"
                 style={{ width: `${itemWidth}px`, minWidth: `${itemWidth}px` }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  navigate(`/iphone/${iphone.name}`);
+                }}
               >
                 {iphone.hasNew && (
                   <img
@@ -272,7 +277,7 @@ function IphoneList() {
                       src={resolveProductImage(
                         iphone.name,
                         iphone.colorMap[activeColors[iphone.name]],
-                        "Iphone"
+                        "Iphone",
                       )}
                     />
                   </div>
@@ -303,12 +308,25 @@ function IphoneList() {
                   {/* Button buy */}
                   <div className="iphonelist-btn-container">
                     <button className="iphonelist btn information">
-                      <span className="more-text">THÔNG TIN SẢN PHẨM</span>
+                      <span
+                        className="more-text"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          navigate(`/iphone/${iphone.name}`);
+                        }}
+                      >
+                        THÔNG TIN SẢN PHẨM
+                      </span>
                     </button>
 
                     <button
                       className="iphonelist btn buy"
-                      onClick={() => handleBuyNow(iphone)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleBuyNow(iphone);
+                      }}
                     >
                       <span className="buy-text">MUA NGAY</span>
                     </button>

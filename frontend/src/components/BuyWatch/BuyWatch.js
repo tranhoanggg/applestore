@@ -32,7 +32,7 @@ const BuyWatch = () => {
 
   // FETCH SẢN PHẨM
   useEffect(() => {
-    fetch(`http://localhost:5000/watchs/buy/${state.product_name}`)
+    fetch(`${process.env.REACT_APP_API_URL}/watchs/buy/${state.product_name}`)
       .then((res) => res.json())
       .then((data) => {
         setVariants(data);
@@ -158,7 +158,7 @@ const BuyWatch = () => {
       payment_status,
     };
 
-    const res = await fetch("http://localhost:5000/watchs/pay", {
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/watchs/pay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -175,7 +175,7 @@ const BuyWatch = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/add_to_cart", {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/add_to_cart`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -197,7 +197,7 @@ const BuyWatch = () => {
       window.dispatchEvent(new Event("cart-updated"));
 
       const goToCart = window.confirm(
-        "Đã thêm sản phẩm vào giỏ hàng thành công!\n\nNhấn OK để tới giỏ hàng\nNhấn Huỷ để về trang chủ"
+        "Đã thêm sản phẩm vào giỏ hàng thành công!\n\nNhấn OK để tới giỏ hàng\nNhấn Huỷ để về trang chủ",
       );
 
       if (goToCart) {
@@ -229,7 +229,7 @@ const BuyWatch = () => {
                     src={resolveProductImage(
                       currentProduct.name,
                       currentProduct.image,
-                      "Watch"
+                      "Watch",
                     )}
                     alt={currentProduct.name}
                     className="buy-image"

@@ -145,6 +145,18 @@
   color: white;
 }
 
+.action-button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.accept-order,
+.cancel-order {
+  display: block;
+  width: 90px;
+}
+
 .admin-actions .ghost,
 .admin-table .ghost {
   background: #f5f5f7;
@@ -177,6 +189,7 @@
 .admin-table-actions {
   display: flex;
   gap: 8px;
+  padding: 23px 10px !important;
 }
 
 .muted {
@@ -215,4 +228,51 @@
   .admin-table-actions {
     flex-direction: column;
   }
+}
+
+/* Thêm vào AdminDashboard.css */
+tr.selected-row {
+  background-color: #f0f9ff; /* Màu nền xanh nhạt */
+  outline: 2px solid #007bff; /* Viền xanh dương */
+  position: relative;
+  z-index: 1;
+}
+
+.ban-control-panel {
+  margin: 20px 0;
+  padding: 20px;
+  background: #fff0f0;
+  border: 1px solid #ffcccc;
+  border-radius: 8px;
+}
+
+.ban-control-title {
+  font-weight: bold;
+  color: #dc3545;
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.ban-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  align-items: end;
+}
+
+.ban-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ban-input-group label {
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.ban-select,
+.ban-input,
+.danger {
+  padding: 6px;
 }

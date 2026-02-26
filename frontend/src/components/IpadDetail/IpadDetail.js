@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 import "./IpadDetail.css";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { resolveProductImage } from "../../utils/image";
+import RelatedProducts from "../Product/RelatedProducts";
+import { logBehavior, ACTION_TYPES } from "../../utils/logger";
 
 function IpadDetail() {
   const { name } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const decodedName = decodeURIComponent(name);
 
@@ -17,9 +20,21 @@ function IpadDetail() {
   const [totalImages, setTotalImages] = useState(1);
   const [fadeout, setFadeout] = useState(false);
 
+  useEffect(() => {
+    if (name) {
+      logBehavior(
+        ACTION_TYPES.VIEW,
+        `Xem chi tiết: ${decodeURIComponent(name)}`,
+      );
+    }
+  }, [name]);
+
   /* ===== fetch ipad info ===== */
   useEffect(() => {
-    fetch("http://localhost:5000/ipads")
+    setFadeout(false);
+    setIpad(null);
+
+    fetch(`${process.env.REACT_APP_API_URL}/ipads`)
       .then((res) => res.json())
       .then((data) => {
         const filtered = data.filter((p) => p.name.trim() === decodedName);
@@ -46,13 +61,25 @@ function IpadDetail() {
           colorMap,
         });
 
-        setActiveColor(colors[0].code);
+        const preSelectedColor = location.state?.preSelectedColor;
+
+        // Kiểm tra xem màu truyền vào có tồn tại trong danh sách màu của sp này không
+        const isColorValid =
+          preSelectedColor && colors.some((c) => c.code === preSelectedColor);
+
+        if (isColorValid) {
+          setActiveColor(preSelectedColor); // Dùng màu từ RelatedProducts
+        } else {
+          setActiveColor(colors[0].code); // Dùng màu mặc định
+        }
       });
   }, [decodedName]);
 
   /* ===== fetch detail text ===== */
   useEffect(() => {
-    fetch(`http://localhost:5000/details/${encodeURIComponent(decodedName)}`)
+    fetch(
+      `${process.env.REACT_APP_API_URL}/details/${encodeURIComponent(decodedName)}`,
+    )
       .then((res) => res.json())
       .then(setDetails)
       .catch(console.error);
@@ -61,7 +88,11 @@ function IpadDetail() {
   useEffect(() => {
     if (!ipad || !activeColor) return;
 
-    const baseImage = resolveProductImage(ipad.name, ipad.colorMap[activeColor], "Ipad");
+    const baseImage = resolveProductImage(
+      ipad.name,
+      ipad.colorMap[activeColor],
+      "Ipad",
+    );
 
     if (!baseImage.startsWith("/assets/images/")) {
       setTotalImages(1);
@@ -99,13 +130,18 @@ function IpadDetail() {
 
   const minPrice = Math.min(...ipad.prices);
   const maxPrice = Math.max(...ipad.prices);
-  const baseImage = resolveProductImage(ipad.name, ipad.colorMap[activeColor], "Ipad");
+  const baseImage = resolveProductImage(
+    ipad.name,
+    ipad.colorMap[activeColor],
+    "Ipad",
+  );
   const hasGallery = baseImage.startsWith("/assets/images/") && totalImages > 1;
   const currentImage = hasGallery
     ? baseImage.replace(/\/(\d+)\.(png|jpe?g|webp)$/i, `/${imageIndex}.$2`)
     : baseImage;
 
   const handleBuy = () => {
+    logBehavior(ACTION_TYPES.CLICK, `Bấm mua ngay: ${ipad.name}`);
     const client = localStorage.getItem("client");
 
     if (!client) {
@@ -146,71 +182,79 @@ function IpadDetail() {
   };
 
   return (
-    <div className={`ipad-detail-overlay ${fadeout ? "fade-out" : ""}`}>
-      <div className="ipad-detail-modal">
-        {/* CLOSE */}
-        <button className="close-btn" onClick={handleBack}>
-          ✕
-        </button>
+    <div className={`ipad-detail-page ${fadeout ? "fade-out" : ""}`}>
+      <div className={`ipad-detail-overlay`}>
+        <div className="ipad-detail-modal">
+          {/* CLOSE */}
+          <button className="close-btn" onClick={handleBack}>
+            ✕
+          </button>
 
-        {/* LEFT */}
-        <div className="detail-left">
-          {hasGallery && (
-            <>
-              <button className="nav-btn left" onClick={prevImage}>
-                <FaChevronLeft />
+          {/* LEFT */}
+          <div className="detail-left">
+            {hasGallery && (
+              <>
+                <button className="nav-btn left" onClick={prevImage}>
+                  <FaChevronLeft />
+                </button>
+              </>
+            )}
+
+            <img className="detail-image" src={currentImage} alt={ipad.name} />
+
+            {hasGallery && (
+              <>
+                <button className="nav-btn right" onClick={nextImage}>
+                  <FaChevronRight />
+                </button>
+              </>
+            )}
+
+            {/* color dots */}
+            <div className="detail-dots">
+              {ipad.colors.map((c) => (
+                <span
+                  key={c.code}
+                  className={
+                    "color-dot" + (activeColor === c.code ? " active" : "")
+                  }
+                  style={{ backgroundColor: c.code }}
+                  onClick={() => setActiveColor(c.code)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT */}
+          <div className="detail-right">
+            <span className="badge-new">MỚI</span>
+
+            <h1>{ipad.name}</h1>
+
+            <div className="price-container">
+              <p className="price-range">
+                Từ {minPrice.toLocaleString("vi-VN")}đ đến{" "}
+                {maxPrice.toLocaleString("vi-VN")}đ
+              </p>
+
+              <button className="buy-btn" onClick={handleBuy}>
+                Mua
               </button>
-            </>
-          )}
+            </div>
 
-          <img className="detail-image" src={currentImage} alt={ipad.name} />
-
-          {hasGallery && (
-            <>
-              <button className="nav-btn right" onClick={nextImage}>
-                <FaChevronRight />
-              </button>
-            </>
-          )}
-
-          {/* color dots */}
-          <div className="detail-dots">
-            {ipad.colors.map((c) => (
-              <span
-                key={c.code}
-                className={
-                  "color-dot" + (activeColor === c.code ? " active" : "")
-                }
-                style={{ backgroundColor: c.code }}
-                onClick={() => setActiveColor(c.code)}
-              />
-            ))}
+            <div className="detail-list">
+              {details.map((d) => (
+                <p key={d.id}>{d.detail}</p>
+              ))}
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* RIGHT */}
-        <div className="detail-right">
-          <span className="badge-new">MỚI</span>
-
-          <h1>{ipad.name}</h1>
-
-          <div className="price-container">
-            <p className="price-range">
-              Từ {minPrice.toLocaleString("vi-VN")}đ đến{" "}
-              {maxPrice.toLocaleString("vi-VN")}đ
-            </p>
-
-            <button className="buy-btn" onClick={handleBuy}>
-              Mua
-            </button>
-          </div>
-
-          <div className="detail-list">
-            {details.map((d) => (
-              <p key={d.id}>{d.detail}</p>
-            ))}
-          </div>
-        </div>
+      <div className="container">
+        {ipad && ipad.name && (
+          <RelatedProducts type="ipad" currentName={ipad.name} />
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,43 @@
+.breadcrumb-container {
+  display: flex;
+  align-items: center;
+  padding: 0 20px 40px; /* Điều chỉnh padding cho phù hợp với container của bạn */
+  background-color: #f5f5f7; /* Màu nền xám nhẹ kiểu Apple */
+  font-size: 14px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  width: fit-content; /* Chỉ rộng vừa đủ nội dung */
+  max-width: 100%;
+  overflow-x: auto; /* Cho phép cuộn ngang trên mobile */
+  white-space: nowrap;
+}
+
+.breadcrumb-item {
+  text-decoration: none;
+  color: #6e6e73; /* Màu chữ xám */
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.breadcrumb-item:hover {
+  color: #0071e3; /* Màu xanh Apple khi hover */
+  text-decoration: underline;
+}
+
+.breadcrumb-item.active {
+  color: #1d1d1f; /* Màu đen đậm cho trang hiện tại */
+  font-weight: 500;
+  pointer-events: none; /* Không cho click vào trang hiện tại */
+}
+
+.breadcrumb-separator {
+  margin: 0 8px;
+  color: #86868b;
+  font-size: 10px;
+}
+
+.breadcrumb-home-icon {
+  font-size: 16px;
+  margin-bottom: 2px;
+}

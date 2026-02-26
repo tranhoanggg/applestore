@@ -272,7 +272,8 @@
   color: white;
   border-radius: 10px;
   cursor: pointer;
-  margin-left: 304px;
+  display: flex;
+  width: 121px;
 }
 
 .checkout.submit-btn:hover {

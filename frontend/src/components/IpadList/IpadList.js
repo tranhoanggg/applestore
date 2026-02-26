@@ -21,7 +21,7 @@ function IpadList() {
   const [itemWidth, setItemWidth] = useState(220);
 
   useEffect(() => {
-    fetch("http://localhost:5000/ipads")
+    fetch(`${process.env.REACT_APP_API_URL}/ipads`)
       .then((res) => res.json())
       .then((data) => {
         const grouped = {};
@@ -83,7 +83,7 @@ function IpadList() {
       if (!viewportRef.current) return;
       const w = viewportRef.current.clientWidth;
       const computed = Math.floor(
-        (w - gap * (itemsPerPage - 1)) / itemsPerPage
+        (w - gap * (itemsPerPage - 1)) / itemsPerPage,
       );
       setItemWidth(computed > 100 ? computed : 120);
     }
@@ -231,6 +231,11 @@ function IpadList() {
                 key={`${ipad.ID}-${idx}`}
                 className="ipad-card"
                 style={{ width: `${itemWidth}px`, minWidth: `${itemWidth}px` }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  navigate(`/ipad/${ipad.name}`);
+                }}
               >
                 {ipad.hasNew && (
                   <img
@@ -253,7 +258,7 @@ function IpadList() {
                       src={resolveProductImage(
                         ipad.name,
                         ipad.colorMap[activeColors[ipad.name]],
-                        "Ipad"
+                        "Ipad",
                       )}
                     />
                   </div>
@@ -282,13 +287,26 @@ function IpadList() {
                   {/* Button buy */}
                   <div className="ipadlist-btn-container">
                     <button className="ipadlist btn information">
-                      <span className="more-text">THÔNG TIN SẢN PHẨM</span>
+                      <span
+                        className="more-text"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          navigate(`/ipad/${ipad.name}`);
+                        }}
+                      >
+                        THÔNG TIN SẢN PHẨM
+                      </span>
                     </button>
 
                     <button className="ipadlist btn buy">
                       <span
                         className="buy-text"
-                        onClick={() => handleBuyNow(ipad)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleBuyNow(ipad);
+                        }}
                       >
                         MUA NGAY
                       </span>

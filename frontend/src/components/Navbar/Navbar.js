@@ -44,7 +44,9 @@ const Navbar = () => {
       setClient(client);
 
       try {
-        const res = await fetch(`http://localhost:5000/cart/${client.id}`);
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/cart/${client.id}`,
+        );
         const data = await res.json();
         setHasCartItems(Array.isArray(data) && data.length > 0);
         setCartCount(data.length);
@@ -140,7 +142,7 @@ const Navbar = () => {
         <ul className="navbar-menu">
           {/* Logo Apple */}
           <li className="navbar-item logo">
-            <a href="/">
+            <a className="navbar-link" href="/">
               <svg
                 viewBox="0 0 14 44"
                 width="20"
@@ -238,11 +240,7 @@ const Navbar = () => {
 
                 {client?.role === "admin" && (
                   <div className="submenu-group" onClick={handleAdmin}>
-                    <img
-                      src={LoginSVG}
-                      className="submenu-icon"
-                      alt="Admin"
-                    />
+                    <img src={LoginSVG} className="submenu-icon" alt="Admin" />
                     <p className="submenu-title">Trang Admin</p>
                   </div>
                 )}

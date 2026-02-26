@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { resolveProductImage } from "../../utils/image";
 import "./Bill.css";
 
 const Bill = () => {
+  const navigate = useNavigate();
   const client = JSON.parse(localStorage.getItem("client"));
   const [bills, setBills] = useState([]);
   const [expandedBill, setExpandedBill] = useState(null);
@@ -11,9 +13,18 @@ const Bill = () => {
 
   const [searchKeyword, setSearchKeyword] = useState("");
   const [selectedDate, setSelectedDate] = useState("all");
+  const [pageVisible, setPageVisible] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      setPageVisible(true);
+    });
+  }, []);
 
   const loadBills = async () => {
-    const res = await fetch(`http://localhost:5000/bill/${client.id}`);
+    const res = await fetch(
+      `${process.env.REACT_APP_API_URL}/bill/${client.id}`,
+    );
     const data = await res.json();
     setBills(data);
   };
@@ -25,7 +36,7 @@ const Bill = () => {
   }, [client]);
 
   const availableDates = Array.from(
-    new Set(bills.map((b) => new Date(b.date).toLocaleDateString("vi-VN")))
+    new Set(bills.map((b) => new Date(b.date).toLocaleDateString("vi-VN"))),
   );
 
   // group bill theo ngày
@@ -43,7 +54,9 @@ const Bill = () => {
     }
 
     if (!billDetails[billId]) {
-      const res = await fetch(`http://localhost:5000/bill-full/${billId}`);
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/bill-full/${billId}`,
+      );
       const data = await res.json();
 
       setBillDetails((prev) => ({
@@ -59,8 +72,8 @@ const Bill = () => {
     status === "Thành công"
       ? "Giao dịch thành công"
       : status === "Đã huỷ"
-      ? "Đã huỷ"
-      : "Đang chờ thanh toán";
+        ? "Đã huỷ"
+        : "Đang chờ thanh toán";
 
   const renderPayment = (method, bank) =>
     method === "Thanh toán tại quầy"
@@ -74,9 +87,12 @@ const Bill = () => {
     try {
       setCancelingId(billId);
 
-      const res = await fetch(`http://localhost:5000/bill/cancel/${billId}`, {
-        method: "PUT",
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/bill/cancel/${billId}`,
+        {
+          method: "PUT",
+        },
+      );
 
       const data = await res.json();
 
@@ -151,7 +167,7 @@ const Bill = () => {
       if (selectedDate !== "all" && date !== selectedDate) return acc;
 
       const filteredList = list.filter((bill) =>
-        billMatchSearch(bill, billDetails[bill.id], searchKeyword)
+        billMatchSearch(bill, billDetails[bill.id], searchKeyword),
       );
 
       if (filteredList.length) {
@@ -160,11 +176,15 @@ const Bill = () => {
 
       return acc;
     },
-    {}
+    {},
   );
 
   return (
-    <section className="bill-container">
+    <section
+      className={`bill-container ${
+        pageVisible ? "page-enter-active" : "page-enter"
+      }`}
+    >
       <h1 className="bill-title">Đơn hàng của {client.name}</h1>
 
       {/* ===== SEARCH BAR ===== */}
@@ -226,7 +246,9 @@ const Bill = () => {
 
                 <div className="bill-actions">
                   <button onClick={() => toggleDetail(bill.id)}>
-                    Thông tin chi tiết
+                    {expandedBill === bill.id
+                      ? "Ẩn thông tin chi tiết"
+                      : "Thông tin chi tiết"}
                   </button>
 
                   {/* ĐANG CHỜ THANH TOÁN → HUỶ */}
@@ -242,21 +264,26 @@ const Bill = () => {
 
                   {/* ĐÃ HUỶ → MUA LẠI (DISABLED) */}
                   {bill.payment_status === "Đã huỷ" && (
-                    <div className="tooltip-wrapper">
-                      <button className="buy-again" disabled>
-                        Mua lại
-                      </button>
-                      <span className="tooltip">
-                        Chức năng này hiện chưa hỗ trợ.
-                      </span>
-                    </div>
+                    <button
+                      className="buy-again"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/reorder/${bill.id}`);
+                      }}
+                    >
+                      Mua lại
+                    </button>
                   )}
                 </div>
               </div>
 
               {/* DETAIL */}
               {expandedBill === bill.id && billDetails[bill.id] && (
-                <div className="bill-items-container">
+                <div
+                  className={`bill-items-container ${
+                    expandedBill === bill.id ? "expanded" : ""
+                  }`}
+                >
                   {billDetails[bill.id].map((item, idx) => {
                     const { product, quantity, type } = item;
 
@@ -269,7 +296,7 @@ const Bill = () => {
                           src={resolveProductImage(
                             product.name,
                             product.image,
-                            type
+                            type,
                           )}
                           alt={product.name}
                         />

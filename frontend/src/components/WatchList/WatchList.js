@@ -21,7 +21,7 @@ function WatchList() {
   const [itemWidth, setItemWidth] = useState(220);
 
   useEffect(() => {
-    fetch("http://localhost:5000/watchs")
+    fetch(`${process.env.REACT_APP_API_URL}/watchs`)
       .then((res) => res.json())
       .then((data) => {
         const grouped = {};
@@ -83,7 +83,7 @@ function WatchList() {
       if (!viewportRef.current) return;
       const w = viewportRef.current.clientWidth;
       const computed = Math.floor(
-        (w - gap * (itemsPerPage - 1)) / itemsPerPage
+        (w - gap * (itemsPerPage - 1)) / itemsPerPage,
       );
       setItemWidth(computed > 100 ? computed : 120);
     }
@@ -233,6 +233,11 @@ function WatchList() {
                 key={`${watch.ID}-${idx}`}
                 className="watch-card"
                 style={{ width: `${itemWidth}px`, minWidth: `${itemWidth}px` }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  navigate(`/watch/${watch.name}`);
+                }}
               >
                 {watch.hasNew && (
                   <img
@@ -255,7 +260,7 @@ function WatchList() {
                       src={resolveProductImage(
                         watch.name,
                         watch.colorMap[activeColors[watch.name]],
-                        "Watch"
+                        "Watch",
                       )}
                     />
                   </div>
@@ -285,13 +290,26 @@ function WatchList() {
                   {/* Button buy */}
                   <div className="watchlist-btn-container">
                     <button className="watchlist btn information">
-                      <span className="more-text">THÔNG TIN SẢN PHẨM</span>
+                      <span
+                        className="more-text"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          navigate(`/watch/${watch.name}`);
+                        }}
+                      >
+                        THÔNG TIN SẢN PHẨM
+                      </span>
                     </button>
 
                     <button className="watchlist btn buy">
                       <span
                         className="buy-text"
-                        onClick={() => handleBuyNow(watch)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleBuyNow(watch);
+                        }}
                       >
                         MUA NGAY
                       </span>

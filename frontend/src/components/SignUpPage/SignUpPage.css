@@ -119,7 +119,8 @@
 .password-confirm-1,
 .password-confirm-2,
 .phone,
-.phone-existed {
+.phone-existed,
+.email-format {
   display: none;
 }
 

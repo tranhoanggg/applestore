@@ -1,13 +1,16 @@
+.mac-detail-page {
+  animation: fadeInOverlay 0.6s ease forwards;
+}
+
+.mac-detail-page.fade-out {
+  animation: fadeOutOverlay 0.4s ease forwards;
+}
+
 .mac-detail-overlay {
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 40px 0;
-  animation: fadeInOverlay 0.6s ease forwards;
-}
-
-.mac-detail-overlay.fade-out {
-  animation: fadeOutOverlay 0.4s ease forwards;
 }
 
 @keyframes fadeInOverlay {

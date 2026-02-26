@@ -39,6 +39,7 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
   position: relative;
   transition: 0.25s ease;
+  cursor: pointer;
 }
 
 .watchpage-card:hover {

@@ -1,10 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./PasswordReset.css";
 
 export default function PasswordReset() {
   const navigate = useNavigate();
   const client = JSON.parse(localStorage.getItem("client") || "{}");
+  const [pageVisible, setPageVisible] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      setPageVisible(true);
+    });
+  }, []);
 
   const [form, setForm] = useState({
     password: "",
@@ -38,7 +45,7 @@ export default function PasswordReset() {
 
     try {
       const res = await fetch(
-        "http://localhost:5000/client_account/password-reset/check",
+        `${process.env.REACT_APP_API_URL}/client_account/password-reset/check`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -46,7 +53,7 @@ export default function PasswordReset() {
             id: client.id,
             current_password: form.password,
           }),
-        }
+        },
       );
 
       const data = await res.json();
@@ -91,7 +98,7 @@ export default function PasswordReset() {
 
     try {
       const res = await fetch(
-        "http://localhost:5000/client_account/password-reset",
+        `${process.env.REACT_APP_API_URL}/client_account/password-reset`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -100,7 +107,7 @@ export default function PasswordReset() {
             current_password: form.password,
             new_password: form.newPassword,
           }),
-        }
+        },
       );
 
       const data = await res.json();
@@ -115,7 +122,7 @@ export default function PasswordReset() {
 
         // reload user
         const refreshed = await fetch(
-          `http://localhost:5000/client_account/${client.id}`
+          `${process.env.REACT_APP_API_URL}/client_account/${client.id}`,
         ).then((res) => res.json());
 
         localStorage.setItem("client", JSON.stringify(refreshed[0]));
@@ -133,7 +140,11 @@ export default function PasswordReset() {
   };
 
   return (
-    <div className="password-reset-page">
+    <div
+      className={`password-reset-page ${
+        pageVisible ? "page-enter-active" : "page-enter"
+      }`}
+    >
       <div className="password-reset-navbar">
         <div className="heading">Tài khoản Apple</div>
         <div className="option-container">

@@ -4,6 +4,13 @@ import { useNavigate } from "react-router-dom";
 
 export default function SignUpPage() {
   const navigate = useNavigate();
+  const [pageVisible, setPageVisible] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      setPageVisible(true);
+    });
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -36,7 +43,7 @@ export default function SignUpPage() {
   const currentYear = new Date().getFullYear();
   const years = Array.from(
     { length: currentYear - 1960 + 1 },
-    (_, i) => currentYear - i
+    (_, i) => currentYear - i,
   );
 
   const checkInformation = async () => {
@@ -68,6 +75,15 @@ export default function SignUpPage() {
       ok = false;
     } else {
       document.querySelector(".email").classList.remove("warning-active");
+
+      if (!form.email.endsWith("@ptit.edu.vn")) {
+        document.querySelector(".email-format").classList.add("warning-active");
+        ok = false;
+      } else {
+        document
+          .querySelector(".email-format")
+          .classList.remove("warning-active");
+      }
     }
 
     if (!form.password) {
@@ -95,7 +111,7 @@ export default function SignUpPage() {
       document.querySelector(".phone").classList.remove("warning-active");
     }
 
-    const list = await fetch("http://localhost:5000/client_account")
+    const list = await fetch(`${process.env.REACT_APP_API_URL}/client_account`)
       .then((res) => res.json())
       .catch(() => []);
 
@@ -143,7 +159,7 @@ export default function SignUpPage() {
     // Convert to yyyy-mm-dd
     const birthday = `${form.year}-${String(form.month).padStart(
       2,
-      "0"
+      "0",
     )}-${String(form.day).padStart(2, "0")}`;
 
     const payload = {
@@ -154,7 +170,7 @@ export default function SignUpPage() {
       password: form.password,
     };
 
-    fetch("http://localhost:5000/signup", {
+    fetch(`${process.env.REACT_APP_API_URL}/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -175,7 +191,11 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="signup-page">
+    <div
+      className={`signup-page-container ${
+        pageVisible ? "page-enter-active" : "page-enter"
+      }`}
+    >
       <div className="signup-navbar">
         <div className="heading">Tài khoản Apple</div>
         <div className="option-container">
@@ -302,6 +322,14 @@ export default function SignUpPage() {
               value={form.email}
               onChange={handleChange}
             />
+
+            <div className="input-warning email-format">
+              <img
+                src={require(`../../assets/images/warning.png`)}
+                alt="warning"
+              />
+              Vui lòng sử dụng email sinh viên PTIT (@ptit.edu.vn).
+            </div>
 
             <div className="input-warning email">
               <img

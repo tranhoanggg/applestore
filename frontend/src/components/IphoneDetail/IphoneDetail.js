@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
 import "./IphoneDetail.css";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { resolveProductImage } from "../../utils/image";
+import RelatedProducts from "../Product/RelatedProducts";
+import { logBehavior, ACTION_TYPES } from "../../utils/logger";
+import RatingSection from "../Product/RatingSection";
 
 function IphoneDetail() {
   const { name } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const decodedName = decodeURIComponent(name);
 
@@ -17,9 +21,21 @@ function IphoneDetail() {
   const [totalImages, setTotalImages] = useState(1);
   const [fadeout, setFadeout] = useState(false);
 
+  useEffect(() => {
+    if (name) {
+      logBehavior(
+        ACTION_TYPES.VIEW,
+        `Xem chi tiết: ${decodeURIComponent(name)}`,
+      );
+    }
+  }, [name]);
+
   /* ===== fetch iphone info ===== */
   useEffect(() => {
-    fetch("http://localhost:5000/iphones")
+    setFadeout(false);
+    setIphone(null);
+
+    fetch("${process.env.REACT_APP_API_URL}/iphones")
       .then((res) => res.json())
       .then((data) => {
         const filtered = data.filter((p) => p.name.trim() === decodedName);
@@ -46,13 +62,25 @@ function IphoneDetail() {
           colorMap,
         });
 
-        setActiveColor(colors[0].code);
+        const preSelectedColor = location.state?.preSelectedColor;
+
+        // Kiểm tra xem màu truyền vào có tồn tại trong danh sách màu của sp này không
+        const isColorValid =
+          preSelectedColor && colors.some((c) => c.code === preSelectedColor);
+
+        if (isColorValid) {
+          setActiveColor(preSelectedColor); // Dùng màu từ RelatedProducts
+        } else {
+          setActiveColor(colors[0].code); // Dùng màu mặc định
+        }
       });
   }, [decodedName]);
 
   /* ===== fetch detail text ===== */
   useEffect(() => {
-    fetch(`http://localhost:5000/details/${encodeURIComponent(decodedName)}`)
+    fetch(
+      `${process.env.REACT_APP_API_URL}/details/${encodeURIComponent(decodedName)}`,
+    )
       .then((res) => res.json())
       .then(setDetails)
       .catch(console.error);
@@ -61,7 +89,11 @@ function IphoneDetail() {
   useEffect(() => {
     if (!iphone || !activeColor) return;
 
-    const baseImage = resolveProductImage(iphone.name, iphone.colorMap[activeColor], "Iphone");
+    const baseImage = resolveProductImage(
+      iphone.name,
+      iphone.colorMap[activeColor],
+      "Iphone",
+    );
 
     if (!baseImage.startsWith("/assets/images/")) {
       setTotalImages(1);
@@ -101,6 +133,7 @@ function IphoneDetail() {
   const maxPrice = Math.max(...iphone.prices);
 
   const handleBuy = () => {
+    logBehavior(ACTION_TYPES.CLICK, `Bấm mua ngay: ${iphone.name}`);
     const client = localStorage.getItem("client");
 
     if (!client) {
@@ -140,78 +173,94 @@ function IphoneDetail() {
     }, 300);
   };
 
-  const baseImage = resolveProductImage(iphone.name, iphone.colorMap[activeColor], "Iphone");
+  const baseImage = resolveProductImage(
+    iphone.name,
+    iphone.colorMap[activeColor],
+    "Iphone",
+  );
   const hasGallery = baseImage.startsWith("/assets/images/") && totalImages > 1;
   const currentImage = hasGallery
     ? baseImage.replace(/\/(\d+)\.(png|jpe?g|webp)$/i, `/${imageIndex}.$2`)
     : baseImage;
 
   return (
-    <div className={`iphone-detail-overlay ${fadeout ? "fade-out" : ""}`}>
-      <div className="iphone-detail-modal">
-        {/* CLOSE */}
-        <button className="close-btn" onClick={handleBack}>
-          ✕
-        </button>
+    <div className={`iphone-detail-page ${fadeout ? "fade-out" : ""}`}>
+      <div className={`iphone-detail-overlay`}>
+        <div className="iphone-detail-modal">
+          {/* CLOSE */}
+          <button className="close-btn" onClick={handleBack}>
+            ✕
+          </button>
 
-        {/* LEFT */}
-        <div className="detail-left">
-          {hasGallery && (
-            <>
-              <button className="nav-btn left" onClick={prevImage}>
-                <FaChevronLeft />
+          {/* LEFT */}
+          <div className="detail-left">
+            {hasGallery && (
+              <>
+                <button className="nav-btn left" onClick={prevImage}>
+                  <FaChevronLeft />
+                </button>
+              </>
+            )}
+
+            <img
+              className="detail-image"
+              src={currentImage}
+              alt={iphone.name}
+            />
+
+            {hasGallery && (
+              <>
+                <button className="nav-btn right" onClick={nextImage}>
+                  <FaChevronRight />
+                </button>
+              </>
+            )}
+
+            {/* color dots */}
+            <div className="detail-dots">
+              {iphone.colors.map((c) => (
+                <span
+                  key={c.code}
+                  className={
+                    "color-dot" + (activeColor === c.code ? " active" : "")
+                  }
+                  style={{ backgroundColor: c.code }}
+                  onClick={() => setActiveColor(c.code)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT */}
+          <div className="detail-right">
+            <span className="badge-new">MỚI</span>
+
+            <h1>{iphone.name}</h1>
+
+            <div className="price-container">
+              <p className="price-range">
+                Từ {minPrice.toLocaleString("vi-VN")}đ đến{" "}
+                {maxPrice.toLocaleString("vi-VN")}đ
+              </p>
+
+              <button className="buy-btn" onClick={handleBuy}>
+                Mua
               </button>
-            </>
-          )}
+            </div>
 
-          <img className="detail-image" src={currentImage} alt={iphone.name} />
-
-          {hasGallery && (
-            <>
-              <button className="nav-btn right" onClick={nextImage}>
-                <FaChevronRight />
-              </button>
-            </>
-          )}
-
-          {/* color dots */}
-          <div className="detail-dots">
-            {iphone.colors.map((c) => (
-              <span
-                key={c.code}
-                className={
-                  "color-dot" + (activeColor === c.code ? " active" : "")
-                }
-                style={{ backgroundColor: c.code }}
-                onClick={() => setActiveColor(c.code)}
-              />
-            ))}
+            <div className="detail-list">
+              {details.map((d) => (
+                <p key={d.id}>{d.detail}</p>
+              ))}
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* RIGHT */}
-        <div className="detail-right">
-          <span className="badge-new">MỚI</span>
+      <div className="container">
+        {iphone && iphone.name && <RatingSection productName={iphone.name} />}
 
-          <h1>{iphone.name}</h1>
-
-          <div className="price-container">
-            <p className="price-range">
-              Từ {minPrice.toLocaleString("vi-VN")}đ đến{" "}
-              {maxPrice.toLocaleString("vi-VN")}đ
-            </p>
-
-            <button className="buy-btn" onClick={handleBuy}>
-              Mua
-            </button>
-          </div>
-
-          <div className="detail-list">
-            {details.map((d) => (
-              <p key={d.id}>{d.detail}</p>
-            ))}
-          </div>
-        </div>
+        <RelatedProducts type="iphone" currentName={iphone.name} />
       </div>
     </div>
   );

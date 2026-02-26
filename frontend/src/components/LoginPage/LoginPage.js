@@ -5,6 +5,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 export default function LoginPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [pageVisible, setPageVisible] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      setPageVisible(true);
+    });
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -51,7 +58,7 @@ export default function LoginPage() {
     if (!checkEnoughInformation()) return;
 
     try {
-      const res = await fetch("http://localhost:5000/login", {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -93,7 +100,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-page">
+    <div
+      className={`login-page ${
+        pageVisible ? "page-enter-active" : "page-enter"
+      }`}
+    >
       <div className="login-navbar">
         <div className="heading">Tài khoản Apple</div>
         <div className="option-container">

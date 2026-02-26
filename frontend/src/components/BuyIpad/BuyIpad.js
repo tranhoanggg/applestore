@@ -33,7 +33,7 @@ const BuyIpad = () => {
 
   // FETCH SẢN PHẨM
   useEffect(() => {
-    fetch(`http://localhost:5000/ipads/buy/${state.product_name}`)
+    fetch(`${process.env.REACT_APP_API_URL}/ipads/buy/${state.product_name}`)
       .then((res) => res.json())
       .then((data) => {
         setVariants(data);
@@ -50,7 +50,7 @@ const BuyIpad = () => {
     if (!variants.length) return;
 
     const product = variants.find(
-      (v) => v.color === selectedColor && v.capacity === selectedCapacity
+      (v) => v.color === selectedColor && v.capacity === selectedCapacity,
     );
 
     setCurrentProduct(product);
@@ -169,7 +169,7 @@ const BuyIpad = () => {
       payment_status,
     };
 
-    const res = await fetch("http://localhost:5000/ipads/pay", {
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/ipads/pay`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -186,7 +186,7 @@ const BuyIpad = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/add_to_cart", {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/add_to_cart`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -208,7 +208,7 @@ const BuyIpad = () => {
       window.dispatchEvent(new Event("cart-updated"));
 
       const goToCart = window.confirm(
-        "Đã thêm sản phẩm vào giỏ hàng thành công!\n\nNhấn OK để tới giỏ hàng\nNhấn Huỷ để về trang chủ"
+        "Đã thêm sản phẩm vào giỏ hàng thành công!\n\nNhấn OK để tới giỏ hàng\nNhấn Huỷ để về trang chủ",
       );
 
       if (goToCart) {
@@ -240,7 +240,7 @@ const BuyIpad = () => {
                     src={resolveProductImage(
                       currentProduct.name,
                       currentProduct.image,
-                      "Ipad"
+                      "Ipad",
                     )}
                     alt={currentProduct.name}
                     className="buy-image"

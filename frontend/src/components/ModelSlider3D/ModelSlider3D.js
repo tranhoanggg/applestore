@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import "./ModelSlider3D.css";
@@ -25,7 +25,7 @@ const ModelSlider3D = () => {
       name: "Orange",
       path: "/assets/models/Iphone17PromaxOrange/source/Phone.glb",
       color: "#ff6a00",
-      display: "iPhone 17 Pro Max in Oảnge",
+      display: "iPhone 17 Pro Max in Orange",
     },
     {
       name: "Silver",

@@ -16,7 +16,7 @@ function WatchPage() {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5000/watchs")
+    fetch(`${process.env.REACT_APP_API_URL}/watchs`)
       .then((res) => res.json())
       .then((data) => {
         const grouped = {};
@@ -111,7 +111,15 @@ function WatchPage() {
           const activeColor = activeColors[watch.name];
 
           return (
-            <article key={watch.name} className="watchpage-card">
+            <article
+              key={watch.name}
+              className="watchpage-card"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                navigate(`/watch/${watch.name}`);
+              }}
+            >
               {watch.hasNew && (
                 <img
                   className="watchpage-badge"
@@ -127,7 +135,7 @@ function WatchPage() {
                   src={resolveProductImage(
                     watch.name,
                     watch.colorMap[activeColor],
-                    "Watch"
+                    "Watch",
                   )}
                   alt={watch.name}
                 />
@@ -156,13 +164,21 @@ function WatchPage() {
                 <button
                   className="btn info"
                   onClick={(e) => {
+                    e.stopPropagation();
                     e.preventDefault();
                     navigate(`/watch/${watch.name}`);
                   }}
                 >
                   THÔNG TIN SẢN PHẨM
                 </button>
-                <button className="btn buy" onClick={() => handleBuyNow(watch)}>
+                <button
+                  className="btn buy"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleBuyNow(watch);
+                  }}
+                >
                   MUA NGAY
                 </button>
               </div>

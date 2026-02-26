@@ -16,7 +16,7 @@ function MacPage() {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5000/macs")
+    fetch(`${process.env.REACT_APP_API_URL}/macs`)
       .then((res) => res.json())
       .then((data) => {
         const grouped = {};
@@ -109,7 +109,15 @@ function MacPage() {
           const activeColor = activeColors[mac.name];
 
           return (
-            <article key={mac.name} className="macpage-card">
+            <article
+              key={mac.name}
+              className="macpage-card"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                navigate(`/mac/${mac.name}`);
+              }}
+            >
               {mac.hasNew && (
                 <img
                   className="macpage-badge"
@@ -122,7 +130,11 @@ function MacPage() {
 
               <div className="macpage-image">
                 <img
-                  src={resolveProductImage(mac.name, mac.colorMap[activeColor], "Mac")}
+                  src={resolveProductImage(
+                    mac.name,
+                    mac.colorMap[activeColor],
+                    "Mac",
+                  )}
                   alt={mac.name}
                 />
               </div>
@@ -150,13 +162,21 @@ function MacPage() {
                 <button
                   className="btn info"
                   onClick={(e) => {
+                    e.stopPropagation();
                     e.preventDefault();
                     navigate(`/mac/${mac.name}`);
                   }}
                 >
                   THÔNG TIN SẢN PHẨM
                 </button>
-                <button className="btn buy" onClick={() => handleBuyNow(mac)}>
+                <button
+                  className="btn buy"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleBuyNow(mac);
+                  }}
+                >
                   MUA NGAY
                 </button>
               </div>

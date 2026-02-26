@@ -16,7 +16,7 @@ function IpadPage() {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5000/ipads")
+    fetch(`${process.env.REACT_APP_API_URL}/ipads`)
       .then((res) => res.json())
       .then((data) => {
         const grouped = {};
@@ -109,7 +109,15 @@ function IpadPage() {
           const activeColor = activeColors[ipad.name];
 
           return (
-            <article key={ipad.name} className="ipadpage-card">
+            <article
+              key={ipad.name}
+              className="ipadpage-card"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                navigate(`/ipad/${ipad.name}`);
+              }}
+            >
               {ipad.hasNew && (
                 <img
                   className="ipadpage-badge"
@@ -125,7 +133,7 @@ function IpadPage() {
                   src={resolveProductImage(
                     ipad.name,
                     ipad.colorMap[activeColor],
-                    "Ipad"
+                    "Ipad",
                   )}
                   alt={ipad.name}
                 />
@@ -154,13 +162,21 @@ function IpadPage() {
                 <button
                   className="btn info"
                   onClick={(e) => {
+                    e.stopPropagation();
                     e.preventDefault();
                     navigate(`/ipad/${ipad.name}`);
                   }}
                 >
                   THÔNG TIN SẢN PHẨM
                 </button>
-                <button className="btn buy" onClick={() => handleBuyNow(ipad)}>
+                <button
+                  className="btn buy"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleBuyNow(ipad);
+                  }}
+                >
                   MUA NGAY
                 </button>
               </div>

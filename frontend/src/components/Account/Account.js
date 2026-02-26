@@ -7,6 +7,13 @@ export default function Account() {
   const client = JSON.parse(localStorage.getItem("client") || "{}");
 
   const [originalUser, setOriginalUser] = useState(null);
+  const [pageVisible, setPageVisible] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      setPageVisible(true);
+    });
+  }, []);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -22,7 +29,7 @@ export default function Account() {
   useEffect(() => {
     if (!client?.id) return;
 
-    fetch(`http://localhost:5000/client_account/${client.id}`)
+    fetch(`${process.env.REACT_APP_API_URL}/client_account/${client.id}`)
       .then((res) => res.json())
       .then((data) => {
         const user = data[0];
@@ -70,12 +77,12 @@ export default function Account() {
     check(form.email, ".email");
     check(form.phone, ".phone");
 
-    const list = await fetch("http://localhost:5000/client_account")
+    const list = await fetch(`${process.env.REACT_APP_API_URL}/client_account`)
       .then((res) => res.json())
       .catch(() => []);
 
     const existedEmail = list.find(
-      (u) => u.email === form.email && u.id !== client.id
+      (u) => u.email === form.email && u.id !== client.id,
     );
     if (existedEmail) {
       document.querySelector(".email-existed").classList.add("active");
@@ -85,7 +92,7 @@ export default function Account() {
     }
 
     const existedPhone = list.find(
-      (u) => u.phone === form.phone && u.id !== client.id
+      (u) => u.phone === form.phone && u.id !== client.id,
     );
     if (existedPhone) {
       document.querySelector(".phone-existed").classList.add("active");
@@ -105,7 +112,7 @@ export default function Account() {
 
     const birthday = `${form.year}-${String(form.month).padStart(
       2,
-      "0"
+      "0",
     )}-${String(form.day).padStart(2, "0")}`;
 
     const payload = {
@@ -137,7 +144,7 @@ export default function Account() {
     }
 
     // ===== UPDATE =====
-    fetch("http://localhost:5000/client_account/update", {
+    fetch(`${process.env.REACT_APP_API_URL}/client_account/update`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -153,7 +160,7 @@ export default function Account() {
 
         // Reload user
         const refreshedData = await fetch(
-          `http://localhost:5000/client_account/${client.id}`
+          `${process.env.REACT_APP_API_URL}/client_account/${client.id}`,
         ).then((res) => res.json());
 
         const refreshed = refreshedData[0];
@@ -184,11 +191,15 @@ export default function Account() {
   const currentYear = new Date().getFullYear();
   const years = Array.from(
     { length: currentYear - 1960 + 1 },
-    (_, i) => currentYear - i
+    (_, i) => currentYear - i,
   );
 
   return (
-    <div className="account-page">
+    <div
+      className={`account-page ${
+        pageVisible ? "page-enter-active" : "page-enter"
+      }`}
+    >
       <div className="account-navbar">
         <div className="heading">Tài khoản Apple</div>
         <div className="option-container">
