@@ -35,7 +35,7 @@ function IphoneDetail() {
     setFadeout(false);
     setIphone(null);
 
-    fetch("${process.env.REACT_APP_API_URL}/iphones")
+    fetch(`${process.env.REACT_APP_API_URL}/iphones`)
       .then((res) => res.json())
       .then((data) => {
         const filtered = data.filter((p) => p.name.trim() === decodedName);

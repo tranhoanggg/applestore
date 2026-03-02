@@ -42,7 +42,7 @@ function ensureRoleColumn(callback = () => {}) {
             console.log("Đã thêm cột role vào client_account");
             callback();
           }
-        }
+        },
       );
     } else {
       callback();
@@ -91,9 +91,9 @@ function ensureDefaultAdmin() {
           } else {
             console.log("Đã tạo tài khoản admin mặc định (email: admin)");
           }
-        }
+        },
       );
-    }
+    },
   );
 }
 
@@ -216,7 +216,7 @@ const writeImagesToAssets = ({ type, name, folder, images = [] }) => {
   const safeType = getTypeFolderName(type);
   const safeName = normalizeSegment(name);
   const safeFolder = normalizeSegment(
-    extractFolderSegment(folder) || "default"
+    extractFolderSegment(folder) || "default",
   );
 
   if (!safeType || !safeName || !safeFolder) {
@@ -246,7 +246,7 @@ const writeImagesToAssets = ({ type, name, folder, images = [] }) => {
   // return db-friendly first image path
   const firstExt = detectExtension(
     images[0]?.data || images[0],
-    images[0]?.name || "png"
+    images[0]?.name || "png",
   );
   return `/assets/images/${safeType}/${safeName}/${safeFolder}/1.${firstExt}`;
 };
@@ -283,7 +283,7 @@ function verifyAdminToken(token) {
     if (
       !crypto.timingSafeEqual(
         Buffer.from(signature),
-        Buffer.from(expectedSignature)
+        Buffer.from(expectedSignature),
       )
     ) {
       return null;
@@ -333,7 +333,7 @@ const requireAdmin = (req, res, next) => {
 
       req.admin = user;
       next();
-    }
+    },
   );
 };
 
@@ -371,7 +371,7 @@ app.get("/iphones/buy/:name", (req, res) => {
         return res.status(500).send("Lỗi khi lấy dữ liệu mua iphone");
       }
       res.json(results);
-    }
+    },
   );
 });
 
@@ -465,7 +465,7 @@ app.get("/watchs/buy/:name", (req, res) => {
         return res.status(500).send("Lỗi khi lấy dữ liệu mua watch");
       }
       res.json(results);
-    }
+    },
   );
 });
 
@@ -505,7 +505,7 @@ app.get("/client_account/:id", (req, res) => {
           .send("Lỗi khi lấy dữ liệu client_account theo ID");
       }
       res.json(results);
-    }
+    },
   );
 });
 
@@ -589,7 +589,7 @@ app.post("/client_account/password-reset/check", (req, res) => {
       }
 
       return res.json({ success: true });
-    }
+    },
   );
 });
 
@@ -657,70 +657,9 @@ app.put("/client_account/password-reset", (req, res) => {
           message: "Cập nhật mật khẩu thành công",
         });
       });
-    }
+    },
   );
 });
-
-// app.post("/login", (req, res) => {
-//   const { email, password } = req.body;
-
-//   if (!email || !password) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "Thiếu email hoặc mật khẩu",
-//     });
-//   }
-
-//   db.query(
-//     "SELECT id, name, birthday, email, phone, password, role FROM client_account WHERE email = ?",
-//     [email],
-//     (err, results) => {
-//       if (err) {
-//         console.error("Không thể đăng nhập", err);
-//         return res.status(500).json({ success: false });
-//       }
-
-//       const user = results[0];
-//       if (!user || user.password !== password) {
-//         return res
-//           .status(401)
-//           .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
-//       }
-
-//       const normalizedUser = { ...user, role: user.role || "user" };
-//       delete normalizedUser.password;
-
-//       const response = { success: true, user: normalizedUser };
-//       if (normalizedUser.role === "admin") {
-//         response.adminToken = createAdminToken(user);
-//       }
-
-//       res.json(response);
-//     }
-//   );
-// });
-
-// app.post("/signup", (req, res) => {
-//   const { name, birthday, email, phone, password } = req.body;
-
-//   const sql = `
-//     INSERT INTO client_account (name, birthday, email, phone, password, role)
-//     VALUES (?, ?, ?, ?, ?, 'user')
-//   `;
-
-//   db.query(sql, [name, birthday, email, phone, password], (err, result) => {
-//     if (err) {
-//       console.error("Lỗi khi thêm người dùng:", err);
-//       return res.status(500).send("Lỗi khi tạo tài khoản người dùng");
-//     }
-
-//     res.json({
-//       success: true,
-//       message: "Tạo tài khoản thành công!",
-//       userId: result.insertId,
-//     });
-//   });
-// });
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
@@ -735,35 +674,21 @@ app.post("/login", (req, res) => {
   db.query(
     "SELECT id, name, birthday, email, phone, password, role FROM client_account WHERE email = ?",
     [email],
-    async (err, results) => {
-      // Thêm async
+    (err, results) => {
       if (err) {
         console.error("Không thể đăng nhập", err);
         return res.status(500).json({ success: false });
       }
 
       const user = results[0];
-
-      // Kiểm tra user tồn tại
-      if (!user) {
-        return res
-          .status(401)
-          .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
-      }
-
-      // [YÊU CẦU 2] So sánh mật khẩu nhập vào với mật khẩu đã băm trong DB
-      const isMatch = await bcrypt.compare(password, user.password);
-
-      // Lưu ý: Nếu tài khoản cũ lưu pass chưa băm, logic này sẽ fail.
-      // Bạn có thể thêm điều kiện: if (!isMatch && password !== user.password) để hỗ trợ cả 2 tạm thời.
-      if (!isMatch) {
+      if (!user || user.password !== password) {
         return res
           .status(401)
           .json({ success: false, message: "Email hoặc mật khẩu không đúng" });
       }
 
       const normalizedUser = { ...user, role: user.role || "user" };
-      delete normalizedUser.password; // Xóa pass trước khi gửi về client
+      delete normalizedUser.password;
 
       const response = { success: true, user: normalizedUser };
       if (normalizedUser.role === "admin") {
@@ -771,49 +696,30 @@ app.post("/login", (req, res) => {
       }
 
       res.json(response);
-    }
+    },
   );
 });
 
-app.post("/signup", async (req, res) => {
+app.post("/signup", (req, res) => {
   const { name, birthday, email, phone, password } = req.body;
-
-  if (!email || !email.endsWith("@ptit.edu.vn")) {
-    return res.status(400).json({
-      success: false,
-      message: "Vui lòng sử dụng email sinh viên PTIT (@ptit.edu.vn)",
-    });
-  }
-
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
 
   const sql = `
     INSERT INTO client_account (name, birthday, email, phone, password, role)
     VALUES (?, ?, ?, ?, ?, 'user')
   `;
 
-  db.query(
-    sql,
-    [name, birthday, email, phone, hashedPassword],
-    (err, result) => {
-      if (err) {
-        console.error("Lỗi khi thêm người dùng:", err);
-        if (err.code === "ER_DUP_ENTRY") {
-          return res
-            .status(400)
-            .json({ success: false, message: "Email hoặc SĐT đã tồn tại" });
-        }
-        return res.status(500).send("Lỗi khi tạo tài khoản người dùng");
-      }
-
-      res.json({
-        success: true,
-        message: "Tạo tài khoản thành công!",
-        userId: result.insertId,
-      });
+  db.query(sql, [name, birthday, email, phone, password], (err, result) => {
+    if (err) {
+      console.error("Lỗi khi thêm người dùng:", err);
+      return res.status(500).send("Lỗi khi tạo tài khoản người dùng");
     }
-  );
+
+    res.json({
+      success: true,
+      message: "Tạo tài khoản thành công!",
+      userId: result.insertId,
+    });
+  });
 });
 
 app.post("/iphones/pay", (req, res) => {
@@ -909,7 +815,7 @@ app.post("/iphones/pay", (req, res) => {
               success: true,
             });
           });
-        }
+        },
       );
     });
   });
@@ -1008,7 +914,7 @@ app.post("/ipads/pay", (req, res) => {
               success: true,
             });
           });
-        }
+        },
       );
     });
   });
@@ -1109,7 +1015,7 @@ app.post("/macs/pay", (req, res) => {
               success: true,
             });
           });
-        }
+        },
       );
     });
   });
@@ -1210,7 +1116,7 @@ app.post("/watchs/pay", (req, res) => {
               success: true,
             });
           });
-        }
+        },
       );
     });
   });
@@ -1287,7 +1193,7 @@ app.get("/cart/:id", (req, res) => {
         return res.status(500).send("Lỗi khi lấy dữ liệu cart theo ID");
       }
       res.json(results);
-    }
+    },
   );
 });
 
@@ -1466,7 +1372,7 @@ app.post("/cart/pay", (req, res) => {
               }
 
               deductStock(index + 1);
-            }
+            },
           );
         };
 
@@ -1527,7 +1433,7 @@ app.post("/cart/pay", (req, res) => {
         };
 
         deductStock(); // START
-      }
+      },
     );
   });
 });
@@ -1582,7 +1488,7 @@ app.get("/bill/:id", (req, res) => {
         return res.status(500).send("Lỗi khi lấy dữ liệu bill theo ID");
       }
       res.json(results);
-    }
+    },
   );
 });
 
@@ -1598,7 +1504,7 @@ app.get("/bill-detail/:id", (req, res) => {
         return res.status(500).send("Lỗi khi lấy dữ liệu bill_detail theo ID");
       }
       res.json(results);
-    }
+    },
   );
 });
 
@@ -1626,7 +1532,7 @@ app.get("/bill-full/:billId", async (req, res) => {
         (err, results) => {
           if (err) return reject(err);
           resolve(results);
-        }
+        },
       );
     });
 
@@ -1652,10 +1558,10 @@ app.get("/bill-full/:billId", async (req, res) => {
                   ...detail,
                   product: productResult[0] || null,
                 });
-              }
+              },
             );
           });
-        })
+        }),
       );
     } else if (bill.product_id) {
       const tableName = TABLE_NAME_BY_TYPE[bill.product_type];
@@ -1668,7 +1574,7 @@ app.get("/bill-full/:billId", async (req, res) => {
             (err, results) => {
               if (err) return reject(err);
               resolve(results[0] || null);
-            }
+            },
           );
         });
 
@@ -1732,13 +1638,13 @@ app.put("/bill/cancel/:billId", async (req, res) => {
         (err, results) => {
           if (err) return reject(err);
           resolve(results);
-        }
+        },
       );
     });
 
     // ===== 3. BEGIN TRANSACTION =====
     await new Promise((resolve, reject) =>
-      db.query("START TRANSACTION", (err) => (err ? reject(err) : resolve()))
+      db.query("START TRANSACTION", (err) => (err ? reject(err) : resolve())),
     );
 
     // ===================================
@@ -1753,7 +1659,7 @@ app.put("/bill/cancel/:billId", async (req, res) => {
           db.query(
             `UPDATE ${tableName} SET quantity = quantity + ? WHERE id = ?`,
             [item.quantity, item.product_id],
-            (err) => (err ? reject(err) : resolve())
+            (err) => (err ? reject(err) : resolve()),
           );
         });
       }
@@ -1770,7 +1676,7 @@ app.put("/bill/cancel/:billId", async (req, res) => {
           db.query(
             `UPDATE ${tableName} SET quantity = quantity + 1 WHERE id = ?`,
             [bill.product_id],
-            (err) => (err ? reject(err) : resolve())
+            (err) => (err ? reject(err) : resolve()),
           );
         });
       }
@@ -1783,13 +1689,13 @@ app.put("/bill/cancel/:billId", async (req, res) => {
          SET payment_status = 'Đã huỷ' 
          WHERE id = ?`,
         [billId],
-        (err) => (err ? reject(err) : resolve())
+        (err) => (err ? reject(err) : resolve()),
       );
     });
 
     // ===== 5. COMMIT =====
     await new Promise((resolve, reject) =>
-      db.query("COMMIT", (err) => (err ? reject(err) : resolve()))
+      db.query("COMMIT", (err) => (err ? reject(err) : resolve())),
     );
 
     res.json({ success: true, message: "Huỷ đơn thành công" });
@@ -1941,7 +1847,7 @@ app.post("/bill/re-order", (req, res) => {
                   });
                 }
                 deductStock(index + 1);
-              }
+              },
             );
           };
 
@@ -1974,7 +1880,7 @@ app.post("/bill/re-order", (req, res) => {
 
           // Bắt đầu trừ kho
           deductStock();
-        }
+        },
       );
     };
 
@@ -2063,21 +1969,21 @@ app.post("/admin/login", (req, res) => {
         token,
         user: { ...user, role: user.role || "admin" },
       });
-    }
+    },
   );
 });
 
 app.get("/admin/bills", requireAdmin, async (req, res) => {
   try {
     const bills = await queryAsync(
-      "SELECT * FROM bill ORDER BY date DESC, id DESC"
+      "SELECT * FROM bill ORDER BY date DESC, id DESC",
     );
 
     const billsWithItems = await Promise.all(
       bills.map(async (bill) => {
         const details = await queryAsync(
           "SELECT * FROM bill_detail WHERE bill_id = ?",
-          [bill.id]
+          [bill.id],
         );
 
         const items = [];
@@ -2088,7 +1994,7 @@ app.get("/admin/bills", requireAdmin, async (req, res) => {
           try {
             const productRows = await queryAsync(
               `SELECT name FROM ${tableName} WHERE id = ?`,
-              [productId]
+              [productId],
             );
             items.push({
               product_id: productId,
@@ -2110,7 +2016,7 @@ app.get("/admin/bills", requireAdmin, async (req, res) => {
         }
 
         return { ...bill, items };
-      })
+      }),
     );
 
     res.json(billsWithItems);
@@ -2139,7 +2045,7 @@ app.put("/admin/bill/approve/:billId", requireAdmin, (req, res) => {
       }
 
       res.json({ success: true, message: "Đã duyệt đơn hàng" });
-    }
+    },
   );
 });
 
@@ -2245,7 +2151,7 @@ app.put("/admin/products/:type/:id", requireAdmin, (req, res) => {
       }
 
       res.json({ success: true });
-    }
+    },
   );
 });
 
@@ -2303,7 +2209,7 @@ app.put("/admin/users/:id/role", requireAdmin, (req, res) => {
       }
 
       res.json({ success: true });
-    }
+    },
   );
 });
 
@@ -2522,7 +2428,7 @@ app.post("/api/ratings", (req, res) => {
   });
 });
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log("Backend chạy tại http://localhost:5000");
+  console.log(`🚀 Server đang chạy tại port ${PORT}`);
 });
