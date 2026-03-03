@@ -1,162 +1,147 @@
-# Apple Store Web
+# 🍏 Apple For You - Cửa hàng thiết bị Apple Trực tuyến
 
-Ứng dụng gồm **frontend (React)** và **backend (Express + MySQL)**. Dưới đây là hướng dẫn chạy và cách cấp quyền admin để sử dụng bảng điều khiển.
-
-## Cài đặt & khởi chạy
-1. Cài phụ thuộc chung (để chạy song song front/back):
-   ```bash
-   npm install
-   ```
-2. Backend:
-   ```bash
-   cd backend
-   npm install
-   npm start   # lắng nghe ở http://localhost:5000
-   ```
-3. Frontend:
-   ```bash
-   cd frontend
-   npm install
-   npm start   # CRA mặc định http://localhost:3000
-   ```
-4. Chạy cả hai từ thư mục gốc:
-   ```bash
-   npm run start
-   ```
-
-## Cơ sở dữ liệu
-* Import dữ liệu mẫu ban đầu: `Setup Note/Dump20251217.sql` (tạo DB `applestore`, kèm cột `role`, bảng `details`).
-* Sau khi import, chạy tiếp `Setup Note/Add Admin.sql` để mở rộng db cho các chức năng admin
-* Cập nhật thông tin kết nối trong `backend/db.js` (host/user/password/database) trước khi chạy.
-* Khi server khởi động sẽ tự thêm cột `role` (mặc định `user`) vào bảng `client_account` nếu chưa có.
-
-## Quyền admin & các cách nâng cấp tài khoản
-### 1) Tài khoản admin mặc định (ít an toàn)
-* Khi backend khởi động, nếu chưa có admin, hệ thống sẽ tự tạo tài khoản:
-  * Email/username: `admin`
-  * Mật khẩu: `12345687`
-* Đây là cách nhanh nhất để có quyền admin nhưng cực kỳ rủi ro nếu không đổi mật khẩu ngay. Sau khi đăng nhập lần đầu, hãy đổi mật khẩu trong tab **Quyền truy cập** hoặc cập nhật trực tiếp trong DB.
-
-### 2) Đổi role trực tiếp trong DB hoặc từ tài khoản admin
-* Nếu có quyền truy cập cơ sở dữ liệu (hoặc thông qua công cụ DB admin), bạn có thể cập nhật `client_account.role` thành `admin` cho user mong muốn. Đây là phương án khẩn cấp khi mất quyền truy cập giao diện, nhưng cần kiểm soát chặt quyền truy cập DB.
-* Khi đã có một admin đăng nhập, có thể dùng tab **Quyền truy cập** để chuyển role `user` ⇄ `admin` cho tài khoản khác (ngoại trừ chính bạn).
-
-### Đăng nhập & token admin
-* API đăng nhập chung: `POST /login` (body: `{ email, password }`).
-  * Trả về thông tin người dùng và, nếu tài khoản là admin, kèm `adminToken` để gọi các API quản trị (token được ký bằng `ADMIN_BOOTSTRAP_SECRET` trong `.env`, hãy đặt giá trị mạnh để tránh giả mạo token).
-* Trang Admin tự động yêu cầu token này; nếu hết hạn/thiếu token hệ thống sẽ chuyển về trang đăng nhập.
+<img width="1920" height="979" alt="image" src="https://github.com/user-attachments/assets/865b71eb-4532-4a0f-a7f2-5758e2f616f3" />
 
 
-## Quản trị sản phẩm & đơn hàng
-* Tab **Sản phẩm**: chọn loại (iPhone/iPad/Mac/Watch), thêm/sửa/xóa với form động theo trường của từng loại. Bạn có thể:
-  * Chọn ảnh bằng ô browse (ảnh được lưu dưới dạng base64 hoặc đường dẫn), xem trước và thay đổi nhiều lần.
-  * Chọn mã màu bằng bộ chọn màu (HEX) cho trường `code`.
-  * Tìm kiếm theo tên/mã/màu sản phẩm trong bảng.
-* Tab **Đơn hàng**: hiển thị danh sách sản phẩm người dùng mua (bao gồm đơn từ giỏ hàng), cho phép tìm kiếm và duyệt đơn ở trạng thái `Đang chờ thanh toán` (chuyển thành công).
-* Tab **Quyền truy cập**: lọc người dùng bằng ô tìm kiếm rồi cấp/gỡ quyền trực tiếp trong bảng (không còn ô nhập ID/email riêng).
+<p align="center">
+  <i>
+    <b>
+       Một ứng dụng mô phỏng cửa hàng trực tuyến kinh doanh thiết bị Apple, 
+       cho phép người dùng xem danh sách các sản phẩm nổi bật, chi tiết sản phẩm và thực hiện luồng mua sắm cơ bản.
+    </b>
+  </i>
+</p>
 
-## Lưu ý cảnh báo build
-* Thư viện `@mediapipe/tasks-vision` thiếu file source map nên Webpack có thể cảnh báo; đây là cảnh báo vô hại khi chạy dev.
+🔗 **Live Demo:** [Trải nghiệm Website tại đây](https://applestore-pied.vercel.app/)
+
+---
+
+## ✨ Tiến độ dự án (Progress)
+
+### 1. Tiến trình đạt được
+
+1.1. Dành cho Khách hàng (Client-side)
+* **Trải nghiệm giao diện mượt mà:** Lấy cảm hứng từ website Apple chính hãng, Apple For You được thiết kế bắt mắt, trực quan, rõ ràng và dễ thao tác.
+* **Hoạt ảnh sinh động:** Tích hợp mô hình 3D cùng các hiệu ứng chuyển động và tương tác đẹp mắt.
+* **Danh mục Sản phẩm:** Trưng bày đầy đủ các dòng sản phẩm đặc trưng như iPhone, iPad, và Mac.
+* **Chi tiết & Giỏ hàng:** Có trang chi tiết riêng cho từng sản phẩm và chức năng quản lý giỏ hàng.
+* **Luồng thanh toán:** Mô phỏng tương đối đầy đủ quy trình thanh toán mua hàng.
+* **Phản hồi & đánh giá sản phẩm:** Đánh giá sản phẩm trực tiếp bằng số sao, phản hồi và nhận hỗ trợ trực tiếp nhanh chóng, tiện lợi.
+
+1.2. Dành cho Quản trị viên (Admin-side)
+* Quản lý danh sách sản phẩm, đơn hàng.
+* Quản lý người dùng, quyền truy cập.
+* Thống kê hành vi.
+
+### 2. Định hướng phát triển
+2.1. Dành cho Khách hàng (Client-side)
+* Tích hợp thanh toán thật qua ví điện tử và ngân hàng
+
+2.2. Dành cho Quản trị viên (Admin-side)
+* Thống kê doanh thu.
+---
+
+## 🛠️ Công nghệ sử dụng
+
+**Frontend:**
+* **Framework/Library:** React.js
+* **Routing:** React Router DOM
+* **Styling:** CSS thuần (Custom Animations & Layouts)
+* **State Management:** React Hooks (`useState`, `useEffect`, `useRef`)
+
+**Backend & Database:**
+* **Môi trường:** Node.js
+* **Framework:** Express.js
+* **Database:** MySQL
+* **Xác thực:** JSON Web Token (JWT)
+
+---
+
+## 📸 Hình ảnh Dự án
+<img width="1920" height="982" alt="image" src="https://github.com/user-attachments/assets/82ec7acd-b7bc-4433-8c47-1358d77f494f" />
+<p align="center">
+  <i><b>Trang chủ - Nơi chúng ta trải nghiệm mô hình 3D của dòng sản phẩm Apple đang hot cùng những sản phẩm đang được bày bán.</b></i>
+</p>
+</br>
+<img width="1920" height="977" alt="image" src="https://github.com/user-attachments/assets/f82683a1-a2ae-49ea-868e-3095efa67cbe" />
+<p align="center">
+  <i><b>Trang Chi tiết sản phẩm - Tham khảo thông số nổi bật của sản phẩm chúng ta quan tâm</b></i>
+</p>
+</br>
+<img width="1920" height="977" alt="image" src="https://github.com/user-attachments/assets/d594c41d-b42d-48be-87fc-ce72e9cd0987" />
+<img width="1920" height="979" alt="image" src="https://github.com/user-attachments/assets/5c7aafbe-1e1c-4068-92c2-07003b85ca98" />
+<p align="center">
+  <i><b>Trang Đặt hàng và thanh toán - Đa dạng lựa chọn, thanh toán nhanh gọn qua ví điện tử và ngân hàng, hỗ trợ thanh toán tại cơ sở.</b></i>
+</p>
+</br>
+<img width="1920" height="974" alt="image" src="https://github.com/user-attachments/assets/f4a880ad-b934-4f20-9d91-55eb5577309d" />
+<p align="center">
+  <i><b>Đăng ký và đăng nhập để nhận các ưu đãi hội viên cực hấp dẫn!</b></i>
+</p>
+</br>
+<img width="1920" height="977" alt="image" src="https://github.com/user-attachments/assets/b56204be-0129-4bf0-91ec-a2aad300a580" />
+<p align="center">
+  <i><b>Quản lý và thanh toán giỏ hàng chưa bao giờ dễ dàng đến thé!</b></i>
+</p>
+</br>
+<img width="1920" height="976" alt="image" src="https://github.com/user-attachments/assets/67371e84-0d56-43ee-b10f-26ce8f3feb88" />
+<p align="center">
+  <i><b>Tra cứu đơn hàng, mua lại sản phẩm, huỷ đơn đã đặt đều sẵn sàng</b></i>
+</p>
+</br>
+<img width="1920" height="978" alt="image" src="https://github.com/user-attachments/assets/2e7391b3-ebcf-45f6-aefc-237189e6bd57" />
+<img width="1920" height="975" alt="image" src="https://github.com/user-attachments/assets/a84c242d-626d-4697-8c90-35727317f7f4" />
+<p align="center">
+  <i><b>Xem thông tin tài khoản và đổi mật khẩu thật đơn giản!</b></i>
+</p>
+</br>
+<img width="1920" height="979" alt="image" src="https://github.com/user-attachments/assets/6f3ce56a-4c83-469f-9fee-0acd247c4484" />
+<p align="center">
+  <i><b>Trang Admin - Quản lý toàn bộ công việc của admin thuận tiện và dễ dàng!</b></i>
+</p>
+
+---
+
+## 🚀 Hướng dẫn Cài đặt & Khởi chạy (Local)
+
+Để chạy dự án này trên máy tính cá nhân, bạn cần cài đặt [Node.js](https://nodejs.org/) và làm theo các bước sau:
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/tranhoanggg/applestore.git
+cd applestore
+```
+Sau khi đã clone dự án thành công, ở mỗi bước sau hãy mở dự án trong terminal và chạy câu lệnh theo hướng dẫn.
+
+### 2. Thiết lập Backend (Server)
+```bash
+cd backend
+npm install
+```
+
+### 3. Thiết lập Frontend (Client)
+```bash
+cd frontend
+npm install
+```
+
+### 4. Khởi chạy dự án
+4.1. Khởi chạy từng phần
+```bash
+cd backend
+node server.js
+cd ../frontend
+npm start
+```
+
+4.2. Khởi chạy đồng thời
+```bash
+npm start
+```
 
 
-# Chi tiết các thay đổi(xem ở commit gần nhất sau Init 3)
-## Server.js
-### 1) Cấu hình & tiện ích khởi tạo
-* Thêm `dotenv` để đọc biến môi trường từ `.env`.
-* Tăng giới hạn body JSON: `express.json({ limit: "30mb" })` (phục vụ upload ảnh dạng base64 từ admin).
-* Bổ sung các module hỗ trợ:
-  * `fs`, `path`: xử lý/lưu ảnh vào thư mục assets của frontend.
-  * `crypto`: ký và xác thực token admin.
-* Thêm helper `queryAsync(sql, params)` để dùng `Promise/async` khi truy vấn DB (được dùng trong một số API admin).
 
-### 2) Phân quyền role & admin mặc định
-* Tự động đảm bảo cột `client_account.role` tồn tại:
-  * Nếu chưa có cột `role` thì chạy `ALTER TABLE ... ADD COLUMN role ... DEFAULT 'user'`.
-* Tự động tạo tài khoản admin mặc định nếu hệ thống chưa có admin:
-  * Email/username: `admin`
-  * Mật khẩu: `12345687`
-  * Role: `admin`
 
-### 3) Đăng nhập & token admin
-* Thêm API đăng nhập chung: `POST /login`
-  * Trả về `user` (đã bỏ trường `password` khỏi response).
-  * Nếu user có `role = 'admin'` sẽ trả thêm `adminToken`.
-* Thêm cơ chế token admin (HMAC):
-  * Secret ký token: `ADMIN_BOOTSTRAP_SECRET` (đọc từ `.env`).
-  * TTL token: 24 giờ.
-* Thêm middleware `requireAdmin`:
-  * Đọc token từ `Authorization: Bearer <token>`.
-  * Xác thực token + kiểm tra DB `client_account.role = 'admin'` trước khi cho phép gọi `/admin/*`.
 
-### 4) Chuẩn hoá mapping loại sản phẩm & bảng DB
-* Thêm `PRODUCT_TABLES` để cấu hình theo từng loại (`iphone`, `ipad`, `mac`, `watch`):
-  * Mỗi loại gồm `table` + danh sách `fields` dùng cho CRUD admin.
-* Thêm `TABLE_NAME_BY_TYPE` để map `Iphone/Ipad/Mac/Watch/Airpods` -> tên bảng DB tương ứng.
-  * Được dùng lại trong các API xử lý bill (vd: `bill-full`, `bill-cancel`) và trong admin bills.
 
-### 5) Xử lý ảnh sản phẩm (Admin CRUD)
-* Hỗ trợ gửi ảnh dạng base64 từ frontend admin qua field `images`.
-* Backend lưu ảnh vào thư mục assets:
-  * `frontend/public/assets/images/<Type>/<Name>/<Folder>/`
-  * Trả về đường dẫn lưu DB: `/assets/images/.../1.<ext>`
-* Có cơ chế chuẩn hoá và làm sạch:
-  * Chuẩn hoá `type/name/folder` để tránh ký tự nguy hiểm và đồng nhất cấu trúc thư mục.
-  * Xoá ảnh cũ trong folder trước khi ghi ảnh mới để tránh ảnh rác/ảnh stale.
-* Chuẩn hoá giá trị `image` nếu không upload:
-  * Giữ nguyên nếu là `http(s)`, `data:`, `blob:`.
-  * Tự chuẩn hoá nếu là `/assets/...` hoặc chuỗi key/path cũ.
 
-### 6) Điều chỉnh luồng đổi mật khẩu (an toàn hơn so với bản cũ)
-* Thêm API: `POST /client_account/password-reset/check`
-  * Kiểm tra `current_password` trước khi cho phép đổi.
-* Cập nhật API: `PUT /client_account/password-reset`
-  * Bắt buộc có `id`, `current_password`, `new_password`.
-  * Xác thực mật khẩu hiện tại rồi mới cập nhật mật khẩu mới.
-
-### 7) Sửa insert bill cho Watch để khớp schema
-* Ở `POST /watchs/pay`:
-  * Bổ sung các cột `capacity`, `ram`, `rom` vào câu lệnh insert bill (đồng nhất schema).
-  * Gán giá trị rỗng `""` cho `capacity/ram/rom` vì Watch không dùng các trường này.
-
-### 8) Bổ sung hệ thống API quản trị (Admin APIs)
-* Thêm `POST /admin/login` (đăng nhập admin riêng, trả về `token`).
-* Quản lý đơn hàng:
-  * `GET /admin/bills` (lấy toàn bộ bill + gắn thông tin item tối thiểu để hiển thị).
-  * `PUT /admin/bill/approve/:billId` (duyệt đơn: set `payment_status = 'Thành công'`).
-* CRUD sản phẩm theo loại:
-  * `POST /admin/products/:type`
-  * `PUT /admin/products/:type/:id`
-  * `DELETE /admin/products/:type/:id`
-* Quản lý quyền user:
-  * `PUT /admin/users/:id/role` (chuyển role `user` ⇄ `admin` theo whitelist).
-
-## Sửa lỗi từ trước đó(28/12/2025):
-* Các trang detail đã được sửa để không còn navigate cố định về `/buyPhone`.
-* Điều hướng từ detail đã được cập nhật để đi đúng route mua tương ứng theo từng loại sản phẩm (`/buy<Mac/Ipad/...>`).
-
-## Thêm Add Admin.sql
-* Thêm file `Add Admin.sql`.
-* Script dùng để thêm quan hệ/bảng phục vụ phần admin.
-
-## Thêm utils\image.js
-* Thêm file `utils\image.js`.
-* Thống nhất/chuẩn hóa việc gọi và trả về `image`.
-
-## Chuẩn hóa việc gọi image với utils\image.js (hàm resolveProductImage)
-* Chuẩn hóa việc resolve `image` thông qua `resolveProductImage`.
-* Áp dụng tại:
-  * Các trang Detail, List, Page, Buy (ipad, phone, mac, watch)
-  * `CheckoutSummary`
-
-## Sửa 1 số chỗ:
-* Password reset
-* Navbar
-* Login
-* Thêm route ở `AppContent.js`
-
-## Thêm giao diện admin:
-* Thêm giao diện admin trong `src\components\Admin`.
-
-## Những vấn đề tồn đọng:
-* Admin hiện tại chỉ thêm được 1 ảnh khi thêm sản phẩm.
-* Tài khoản admin (mặc định) ở một số lúc khi thao tác với cart có thể sinh ra lỗi (khả năng do dữ liệu mismatch, chưa thấy xảy ra với tài khoản được nâng quyền).
