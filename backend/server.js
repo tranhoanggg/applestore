@@ -337,7 +337,7 @@ const requireAdmin = (req, res, next) => {
   );
 };
 
-// 1. KHAI BÁO DANH SÁCH ENDPOINT (Kèm theo tên route số ít cho API lấy ID)
+// 1. Khai báo danh sách endpoint và bảng tương ứng
 const productEndpoints = [
   { route: "iphones", singular: "iphone", table: "iphone" },
   { route: "ipads", singular: "ipad", table: "ipad" },
@@ -346,9 +346,9 @@ const productEndpoints = [
   { route: "earphones", singular: "earphone", table: "earphone" },
 ];
 
-// 2. VÒNG LẶP TỰ ĐỘNG TẠO API
+// 2. Vòng lặp tự động tạo API cho tất cả sản phẩm
 productEndpoints.forEach(({ route, singular, table }) => {
-  // [GET] Danh sách sản phẩm
+  // [GET] Lấy danh sách toàn bộ sản phẩm
   app.get(`/${route}`, (req, res) => {
     db.query(`SELECT * FROM ${table}`, (err, results) => {
       if (err) {
@@ -359,7 +359,7 @@ productEndpoints.forEach(({ route, singular, table }) => {
     });
   });
 
-  // [GET] Chi tiết theo ID (Sử dụng đường dẫn SỐ ÍT: vd /iphone/:id)
+  // [GET] Lấy chi tiết sản phẩm theo ID (Dùng đường dẫn số ít: vd /iphone/:id)
   app.get(`/${singular}/:id`, (req, res) => {
     const id = req.params.id;
     db.query(`SELECT * FROM ${table} WHERE id = ?`, [id], (err, results) => {
@@ -371,7 +371,7 @@ productEndpoints.forEach(({ route, singular, table }) => {
     });
   });
 
-  // [GET] Dữ liệu mua theo Tên
+  // [GET] Lấy dữ liệu biến thể theo Tên (Dùng cho trang mua hàng)
   app.get(`/${route}/buy/:name`, (req, res) => {
     const productName = req.params.name;
     db.query(
@@ -387,7 +387,7 @@ productEndpoints.forEach(({ route, singular, table }) => {
     );
   });
 
-  // [POST] Thanh toán (Có Transaction và Update Quantity)
+  // [POST] Xử lý Thanh Toán (Tạo Bill với Transaction)
   app.post(`/${route}/pay`, (req, res) => {
     const {
       user_id,
@@ -398,7 +398,7 @@ productEndpoints.forEach(({ route, singular, table }) => {
       color,
       capacity,
       ram,
-      rom, // Bổ sung ram, rom cho Mac
+      rom,
       address_detail,
       commune,
       district,
@@ -409,43 +409,52 @@ productEndpoints.forEach(({ route, singular, table }) => {
       payment_status,
     } = req.body;
 
-    db.beginTransaction((err) => {
+    // Lấy một kết nối từ Pool để thực hiện transaction
+    db.getConnection((err, connection) => {
       if (err) {
-        console.error("Begin transaction error", err);
-        return res.status(500).json({ success: false });
+        console.error("Lỗi lấy connection từ pool:", err);
+        return res
+          .status(500)
+          .json({ success: false, message: "Lỗi kết nối cơ sở dữ liệu" });
       }
 
-      // Trừ số lượng tồn kho của đúng bảng đang được gọi
-      const updateQuantitySql = `
-        UPDATE ${table}
-        SET quantity = quantity - 1
-        WHERE id = ? AND quantity > 0
-      `;
-
-      db.query(updateQuantitySql, [product_id], (err, result) => {
-        if (err || result.affectedRows === 0) {
-          return db.rollback(() => {
-            console.error("Không đủ hàng hoặc lỗi update quantity", err);
-            res.status(400).json({
-              success: false,
-              message: "Sản phẩm đã hết hàng",
-            });
-          });
+      connection.beginTransaction((err) => {
+        if (err) {
+          connection.release();
+          console.error("Begin transaction error", err);
+          return res.status(500).json({ success: false });
         }
 
-        // Tạo hóa đơn (Lưu ý: Bảng bill cần có các cột tương ứng)
-        const insertBillSql = `
-          INSERT INTO bill (
-            user_id, name, phone, product_id, product_type, color, capacity, ram, rom,
-            address_detail, commune, district, city, date,
-            payment_method, bank, payment_status
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        // Bước 1: Trừ số lượng tồn kho (quantity)
+        const updateQuantitySql = `
+          UPDATE ${table}
+          SET quantity = quantity - 1
+          WHERE id = ? AND quantity > 0
         `;
 
-        db.query(
-          insertBillSql,
-          [
+        connection.query(updateQuantitySql, [product_id], (err, result) => {
+          if (err || result.affectedRows === 0) {
+            return connection.rollback(() => {
+              connection.release();
+              console.error("Hết hàng hoặc lỗi cập nhật số lượng");
+              res.status(400).json({
+                success: false,
+                message: "Sản phẩm đã hết hàng hoặc xảy ra lỗi",
+              });
+            });
+          }
+
+          // Bước 2: Tạo hóa đơn trong bảng bill
+          const insertBillSql = `
+            INSERT INTO bill (
+              user_id, name, phone, product_id, product_type, color, capacity, ram, rom,
+              address_detail, commune, district, city, date,
+              payment_method, bank, payment_status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `;
+
+          const billValues = [
             user_id,
             name,
             phone,
@@ -463,30 +472,37 @@ productEndpoints.forEach(({ route, singular, table }) => {
             payment_method,
             bank,
             payment_status,
-          ],
-          (err) => {
+          ];
+
+          connection.query(insertBillSql, billValues, (err) => {
             if (err) {
-              return db.rollback(() => {
-                console.error("Insert bill error", err);
+              return connection.rollback(() => {
+                connection.release();
+                console.error("Lỗi chèn hóa đơn:", err);
                 res.status(500).json({
                   success: false,
                   message: "Không thể tạo đơn hàng",
+                  errorDetail: err.message,
                 });
               });
             }
 
-            db.commit((err) => {
+            // Bước 3: Commit giao dịch
+            connection.commit((err) => {
               if (err) {
-                return db.rollback(() => {
+                return connection.rollback(() => {
+                  connection.release();
                   console.error("Commit error", err);
                   res.status(500).json({ success: false });
                 });
               }
 
+              // Giải phóng kết nối sau khi thành công
+              connection.release();
               res.json({ success: true });
             });
-          },
-        );
+          });
+        });
       });
     });
   });
