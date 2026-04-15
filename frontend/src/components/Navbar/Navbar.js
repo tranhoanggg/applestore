@@ -13,13 +13,13 @@ const Navbar = () => {
     "iPad",
     "iPhone",
     "Watch",
-    "AirPods",
+    "Tai nghe",
     "Giải trí",
     "Phụ kiện",
     "Hỗ trợ",
   ];
 
-  const disabledMenus = ["AirPods", "Giải trí", "Phụ kiện", "Hỗ trợ"];
+  const disabledMenus = ["Giải trí", "Phụ kiện", "Hỗ trợ"];
 
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -165,8 +165,10 @@ const Navbar = () => {
                   if (isDisabled) {
                     e.preventDefault();
                     return;
+                  } else if (item === "Tai nghe") {
+                    navigate("/earphone");
                   } else {
-                    navigate(`/page/${item.toLowerCase()}`);
+                    navigate(`/${item.toLowerCase()}`);
                   }
                 }}
               >

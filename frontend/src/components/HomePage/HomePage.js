@@ -1,9 +1,6 @@
 import React, { useEffect } from "react";
 import ModelSlider3D from "../ModelSlider3D/ModelSlider3D";
-import IphoneList from "../IphoneList/IphoneList";
-import IpadList from "../IpadList/IpadList";
-import MacList from "../MacList/MacList";
-import WatchList from "../WatchList/WatchList";
+import ProductList from "../ProductList/ProductList";
 
 function HomePage() {
   useEffect(() => {
@@ -13,10 +10,46 @@ function HomePage() {
   return (
     <React.Fragment>
       <ModelSlider3D />
-      <IphoneList />
-      <IpadList />
-      <MacList />
-      <WatchList />
+
+      <ProductList
+        title="Mọi phiên bản iPhone"
+        apiEndpoint="iphones"
+        productType="Iphone"
+        itemRoutePrefix="iphone"
+        buyRoute="/buyPhone"
+      />
+
+      <ProductList
+        title="Lựa chọn chiếc iPad của bạn"
+        apiEndpoint="ipads"
+        productType="Ipad"
+        itemRoutePrefix="ipad"
+        buyRoute="/buyIpad"
+      />
+
+      <ProductList
+        title="Mac - Người bạn đồng hành tin cậy"
+        apiEndpoint="macs"
+        productType="Mac"
+        itemRoutePrefix="mac"
+        buyRoute="/buyMac"
+      />
+
+      <ProductList
+        title="Apple Watch - Thời thượng"
+        apiEndpoint="watchs"
+        productType="Watch"
+        itemRoutePrefix="watch"
+        buyRoute="/buyWatch"
+      />
+
+      <ProductList
+        title="Âm thanh tuyệt hảo cùng AirPods & Beats"
+        apiEndpoint="earphones"
+        productType="Earphone"
+        itemRoutePrefix="earphone"
+        buyRoute="/buyEarphone"
+      />
     </React.Fragment>
   );
 }

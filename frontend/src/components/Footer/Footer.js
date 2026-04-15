@@ -39,11 +39,7 @@ function Footer() {
               Điều khoản
             </a>
           </p>
-          <p>
-            <a href="#" className="footer-item-has-link">
-              Hướng dẫn đặt vé trực tuyến
-            </a>
-          </p>
+
           <p>
             <a href="#" className="footer-item-has-link">
               Quy định và chính sách chung

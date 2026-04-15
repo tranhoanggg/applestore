@@ -6,24 +6,15 @@ import Footer from "./components/Footer/Footer";
 import HomePage from "./components/HomePage/HomePage";
 import SignUpPage from "./components/SignUpPage/SignUpPage";
 import LoginPage from "./components/LoginPage/LoginPage";
-import BuyPhone from "./components/BuyPhone/BuyPhone";
-import BuyIpad from "./components/BuyIpad/BuyIpad";
-import BuyMac from "./components/BuyMac/BuyMac";
-import BuyWatch from "./components/BuyWatch/BuyWatch";
+import BuyPage from "./components/BuyPage/BuyPage";
 import Account from "./components/Account/Account";
 import PasswordReset from "./components/PasswordReset/PasswordReset";
 import CheckoutSummary from "./components/CheckoutSummary/CheckoutSummary";
 import Bill from "./components/Bill/Bill";
 import AdminDashboard from "./components/Admin/AdminDashboard";
-import IphonePage from "./components/IphonePage/IphonePage";
-import IpadPage from "./components/IpadPage/IpadPage";
-import MacPage from "./components/MacPage/MacPage";
-import WatchPage from "./components/WatchPage/WatchPage";
-import IphoneDetail from "./components/IphoneDetail/IphoneDetail";
-import IpadDetail from "./components/IpadDetail/IpadDetail";
-import MacDetail from "./components/MacDetail/MacDetail";
-import WatchDetail from "./components/WatchDetail/WatchDetail";
 import ReOrder from "./components/ReOrder/ReOrder";
+import CategoryPage from "./components/CategoryPage/CategoryPage";
+import ProductDetail from "./components/ProductDetail/ProductDetail";
 
 function App() {
   return (
@@ -33,23 +24,152 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/buyPhone" element={<BuyPhone />} />
-        <Route path="/buyIpad" element={<BuyIpad />} />
-        <Route path="/buyMac" element={<BuyMac />} />
-        <Route path="/buyWatch" element={<BuyWatch />} />
         <Route path="/account" element={<Account />} />
         <Route path="/password-reset" element={<PasswordReset />} />
         <Route path="/cart" element={<CheckoutSummary />} />
         <Route path="/reorder/:billId" element={<ReOrder />} />
         <Route path="/bill" element={<Bill />} />
-        <Route path="/page/iphone" element={<IphonePage />} />
-        <Route path="/page/ipad" element={<IpadPage />} />
-        <Route path="/page/mac" element={<MacPage />} />
-        <Route path="/page/watch" element={<WatchPage />} />
-        <Route path="/iphone/:name" element={<IphoneDetail />} />
-        <Route path="/ipad/:name" element={<IpadDetail />} />
-        <Route path="/mac/:name" element={<MacDetail />} />
-        <Route path="/watch/:name" element={<WatchDetail />} />
+        {/* CÁC ROUTE MUA HÀNG */}
+        <Route
+          path="/buyPhone"
+          element={<BuyPage apiEndpoint="iphones" productType="Iphone" />}
+        />
+        <Route
+          path="/buyIpad"
+          element={<BuyPage apiEndpoint="ipads" productType="Ipad" />}
+        />
+        <Route
+          path="/buyMac"
+          element={<BuyPage apiEndpoint="macs" productType="Mac" />}
+        />
+        <Route
+          path="/buyWatch"
+          element={<BuyPage apiEndpoint="watchs" productType="Watch" />}
+        />
+        <Route
+          path="/buyEarphone"
+          element={<BuyPage apiEndpoint="earphones" productType="Earphone" />}
+        />
+
+        {/* CÁC ROUTE DANH MỤC (CATEGORY) */}
+        <Route
+          path="/iphone"
+          element={
+            <CategoryPage
+              title="iPhone"
+              apiEndpoint="iphones"
+              productType="Iphone"
+              itemRoutePrefix="iphone"
+              buyRoute="/buyPhone"
+            />
+          }
+        />
+        <Route
+          path="/ipad"
+          element={
+            <CategoryPage
+              title="iPad"
+              apiEndpoint="ipads"
+              productType="Ipad"
+              itemRoutePrefix="ipad"
+              buyRoute="/buyIpad"
+            />
+          }
+        />
+        <Route
+          path="/mac"
+          element={
+            <CategoryPage
+              title="Mac"
+              apiEndpoint="macs"
+              productType="Mac"
+              itemRoutePrefix="mac"
+              buyRoute="/buyMac"
+            />
+          }
+        />
+        <Route
+          path="/watch"
+          element={
+            <CategoryPage
+              title="Apple Watch"
+              apiEndpoint="watchs"
+              productType="Watch"
+              itemRoutePrefix="watch"
+              buyRoute="/buyWatch"
+            />
+          }
+        />
+        <Route
+          path="/earphone"
+          element={
+            <CategoryPage
+              title="Tai nghe"
+              apiEndpoint="earphones"
+              productType="Earphone"
+              itemRoutePrefix="earphone"
+              buyRoute="/buyEarphone"
+            />
+          }
+        />
+
+        {/* CÁC ROUTE CHI TIẾT (DETAIL) */}
+        <Route
+          path="/iphone/:name"
+          element={
+            <ProductDetail
+              apiEndpoint="iphones"
+              productType="Iphone"
+              relatedType="iphone"
+              buyRoute="/buyPhone"
+            />
+          }
+        />
+        <Route
+          path="/ipad/:name"
+          element={
+            <ProductDetail
+              apiEndpoint="ipads"
+              productType="Ipad"
+              relatedType="ipad"
+              buyRoute="/buyIpad"
+            />
+          }
+        />
+        <Route
+          path="/mac/:name"
+          element={
+            <ProductDetail
+              apiEndpoint="macs"
+              productType="Mac"
+              relatedType="mac"
+              buyRoute="/buyMac"
+            />
+          }
+        />
+        <Route
+          path="/watch/:name"
+          element={
+            <ProductDetail
+              apiEndpoint="watchs"
+              productType="Watch"
+              relatedType="watch"
+              buyRoute="/buyWatch"
+            />
+          }
+        />
+        <Route
+          path="/earphone/:name"
+          element={
+            <ProductDetail
+              apiEndpoint="earphones"
+              productType="Earphone"
+              relatedType="earphone"
+              buyRoute="/buyEarphone"
+            />
+          }
+        />
+
         <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
       <Footer />

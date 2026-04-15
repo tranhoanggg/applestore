@@ -23,13 +23,20 @@ export const resolveProductImage = (name, image, type, sequence = 1) => {
     return normalized;
   }
 
-  // Allow reusing stored asset-relative paths
   if (/^\/?assets\//i.test(normalized)) {
-    const withSlash = normalized.startsWith("/") ? normalized : `/${normalized}`;
+    const withSlash = normalized.startsWith("/")
+      ? normalized
+      : `/${normalized}`;
     return withSlash.replace(/\/(\d+)\.(png|jpe?g|webp)$/i, `/${sequence}.$2`);
   }
 
-  const normalizedType = (type || "").charAt(0).toUpperCase() + (type || "").slice(1);
+  const normalizedType =
+    (type || "").charAt(0).toUpperCase() + (type || "").slice(1);
+
+  if (normalizedType === "Earphone") {
+    return `/assets/images/${normalizedType}/${normalized}`;
+  }
+
   const safeName = sanitizeSegment(name);
   const folderSegment = sanitizeSegment(normalized.split("/").pop());
 

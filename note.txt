@@ -1,5 +1,0 @@
-Apple Store:
-Host: gateway01.ap-southeast-1.prod.aws.tidbcloud.com
-Port: 4000
-User: 3hnWaYq3m9cS98R.root
-Password: fwaZaXd0m9hTQt69
