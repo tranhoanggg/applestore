@@ -142,6 +142,14 @@ const PRODUCT_TABLES = {
     table: "watch",
     fields: ["name", "color", "code", "price", "tag", "quantity", "image"],
   },
+  earphone: {
+    table: "earphone",
+    fields: ["name", "color", "code", "price", "tag", "quantity", "image"],
+  },
+  accessory: {
+    table: "accessory",
+    fields: ["name", "color", "code", "price", "tag", "quantity", "image"],
+  },
 };
 
 const TABLE_NAME_BY_TYPE = {
@@ -150,6 +158,8 @@ const TABLE_NAME_BY_TYPE = {
   Mac: "mac",
   Watch: "watch",
   Airpods: "airpods",
+  Earphone: "earphone",
+  Accessory: "accessory",
 };
 
 const ADMIN_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -344,6 +354,7 @@ const productEndpoints = [
   { route: "macs", singular: "mac", table: "mac" },
   { route: "watchs", singular: "watch", table: "watch" },
   { route: "earphones", singular: "earphone", table: "earphone" },
+  { route: "accessories", singular: "accessory", table: "accessory" },
 ];
 
 // 2. Vòng lặp tự động tạo API cho tất cả sản phẩm
@@ -905,6 +916,8 @@ app.post("/cart/pay", (req, res) => {
     Ipad: "ipad",
     Mac: "mac",
     Watch: "watch",
+    Earphone: "earphone",
+    Accessory: "accessory",
   };
 
   db.beginTransaction((err) => {
@@ -1366,6 +1379,8 @@ app.post("/bill/re-order", (req, res) => {
     Ipad: "ipad",
     Mac: "mac",
     Watch: "watch",
+    Earphone: "earphone",
+    Accessory: "accessory",
   };
 
   db.beginTransaction((err) => {
@@ -1534,8 +1549,14 @@ app.post("/bill/re-order", (req, res) => {
 app.get("/api/products/:type/:name/related", async (req, res) => {
   const { type, name } = req.params;
 
-  // ... (đoạn validate type giữ nguyên) ...
-  const allowedTables = ["iphone", "ipad", "mac", "watch"];
+  const allowedTables = [
+    "iphone",
+    "ipad",
+    "mac",
+    "watch",
+    "earphone",
+    "accessory",
+  ];
   if (!allowedTables.includes(type)) {
     return res.status(400).json({ message: "Invalid product type" });
   }
