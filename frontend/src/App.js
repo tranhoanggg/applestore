@@ -50,6 +50,12 @@ function App() {
           path="/buyEarphone"
           element={<BuyPage apiEndpoint="earphones" productType="Earphone" />}
         />
+        <Route
+          path="/buyAccessory"
+          element={
+            <BuyPage apiEndpoint="accessories" productType="Accessory" />
+          }
+        />
 
         {/* CÁC ROUTE DANH MỤC (CATEGORY) */}
         <Route
@@ -112,6 +118,18 @@ function App() {
             />
           }
         />
+        <Route
+          path="/accessory"
+          element={
+            <CategoryPage
+              title="Phụ kiện"
+              apiEndpoint="accessories"
+              productType="Accessory"
+              itemRoutePrefix="accessory"
+              buyRoute="/buyAccessory"
+            />
+          }
+        />
 
         {/* CÁC ROUTE CHI TIẾT (DETAIL) */}
         <Route
@@ -166,6 +184,17 @@ function App() {
               productType="Earphone"
               relatedType="earphone"
               buyRoute="/buyEarphone"
+            />
+          }
+        />
+        <Route
+          path="/accessory/:name"
+          element={
+            <ProductDetail
+              apiEndpoint="accessories"
+              productType="Accessory"
+              relatedType="accessory"
+              buyRoute="/buyAccessory"
             />
           }
         />

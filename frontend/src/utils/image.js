@@ -33,7 +33,7 @@ export const resolveProductImage = (name, image, type, sequence = 1) => {
   const normalizedType =
     (type || "").charAt(0).toUpperCase() + (type || "").slice(1);
 
-  if (normalizedType === "Earphone") {
+  if (normalizedType === "Earphone" || normalizedType === "Accessory") {
     return `/assets/images/${normalizedType}/${normalized}`;
   }
 

@@ -8,18 +8,7 @@ import LoginSVG from "../../assets/svgs/navbar/login.svg";
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const menuItems = [
-    "Mac",
-    "iPad",
-    "iPhone",
-    "Watch",
-    "Tai nghe",
-    "Giải trí",
-    "Phụ kiện",
-    "Hỗ trợ",
-  ];
-
-  const disabledMenus = ["Giải trí", "Phụ kiện", "Hỗ trợ"];
+  const menuItems = ["Mac", "iPad", "iPhone", "Watch", "Tai nghe", "Phụ kiện"];
 
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -155,17 +144,12 @@ const Navbar = () => {
 
           {/* Menu items */}
           {menuItems.map((item, index) => {
-            const isDisabled = disabledMenus.includes(item);
-
             return (
               <li
                 key={index}
-                className={`navbar-item ${isDisabled ? "disabled" : ""}`}
+                className={`navbar-item`}
                 onClick={(e) => {
-                  if (isDisabled) {
-                    e.preventDefault();
-                    return;
-                  } else if (item === "Tai nghe") {
+                  if (item === "Tai nghe") {
                     navigate("/earphone");
                   } else {
                     navigate(`/${item.toLowerCase()}`);
@@ -175,11 +159,6 @@ const Navbar = () => {
                 <button type="button" className="navbar-link">
                   {item}
                 </button>
-                {isDisabled && (
-                  <span className="navbar-tooltip">
-                    Nội dung đang cập nhật, vui lòng đợi chúng tôi hoàn thành
-                  </span>
-                )}
               </li>
             );
           })}

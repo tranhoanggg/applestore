@@ -179,16 +179,47 @@
   line-height: 1;
 }
 
-/* title/type */
-.product-name {
-  margin-bottom: 24px;
-  font-size: 28px;
-  font-weight: 700;
-  max-width: 100%;
-  white-space: nowrap;
+/* title/type - Nâng cấp hiệu ứng Marquee (Chữ chạy liên tục) */
+.product-name-wrapper {
+  width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 24px;
+  display: flex; /* Dùng flex để dàn hàng ngang 2 đoạn chữ */
+}
+
+.product-name-track {
+  display: flex;
+  gap: 40px; /* Khoảng cách giữa đuôi chữ trước và đầu chữ sau */
+  width: max-content;
+}
+
+.product-name {
+  font-size: 22px;
+  font-weight: 700;
   color: #000;
+  margin: 0;
+  flex-shrink: 0; /* Ép chữ không bị co rúm lại */
+}
+
+/* Kích hoạt chạy chữ */
+.product-name-track.marquee .product-name {
+  animation: marqueeText 8s linear infinite;
+}
+
+/* Dừng chạy khi khách hàng rê chuột vào xem */
+.product-card:hover .product-name-track.marquee .product-name {
+  animation-play-state: paused;
+}
+
+@keyframes marqueeText {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    /* Dịch chuyển đúng bằng 100% bản thân chữ đó + khoảng gap 40px */
+    transform: translateX(calc(-100% - 40px));
+  }
 }
 
 /* arrows */

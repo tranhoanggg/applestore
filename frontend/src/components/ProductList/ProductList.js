@@ -4,6 +4,39 @@ import "./ProductList.css";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { resolveProductImage } from "../../utils/image";
 
+const MarqueeName = ({ name }) => {
+  const containerRef = useRef(null);
+  const textRef = useRef(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+
+  useEffect(() => {
+    if (containerRef.current && textRef.current) {
+      // Kiểm tra độ dài thực tế của chữ so với khung
+      setIsOverflowing(
+        textRef.current.scrollWidth > containerRef.current.clientWidth,
+      );
+    }
+  }, [name]);
+
+  return (
+    <div className="product-name-wrapper" ref={containerRef}>
+      <div className={`product-name-track ${isOverflowing ? "marquee" : ""}`}>
+        {/* Lượt chữ số 1 */}
+        <h3 className="product-name" ref={textRef} title={name}>
+          {name}
+        </h3>
+
+        {/* Lượt chữ số 2 (Bản sao nối đuôi) - Chỉ hiện khi bị tràn khung */}
+        {isOverflowing && (
+          <h3 className="product-name" title={name} aria-hidden="true">
+            {name}
+          </h3>
+        )}
+      </div>
+    </div>
+  );
+};
+
 function ProductList({
   title,
   apiEndpoint,
@@ -188,20 +221,24 @@ function ProductList({
     <section className="productlist-container">
       <h2 className="productlist-title">{title}</h2>
 
-      <button
-        className="productlist arrow prev"
-        onClick={prev}
-        aria-label="Prev"
-      >
-        <FaChevronLeft />
-      </button>
-      <button
-        className="productlist arrow next"
-        onClick={next}
-        aria-label="Next"
-      >
-        <FaChevronRight />
-      </button>
+      {products.length > 3 && (
+        <>
+          <button
+            className="productlist arrow prev"
+            onClick={prev}
+            aria-label="Prev"
+          >
+            <FaChevronLeft />
+          </button>
+          <button
+            className="productlist arrow next"
+            onClick={next}
+            aria-label="Next"
+          >
+            <FaChevronRight />
+          </button>
+        </>
+      )}
 
       <div
         className="product-slider-viewport"
@@ -249,9 +286,7 @@ function ProductList({
                 )}
 
                 <div className="poster-wrapper">
-                  <h3 className="product-name" title={product.name}>
-                    {product.name}
-                  </h3>
+                  <MarqueeName name={product.name} />
 
                   <div className="product-poster">
                     <img

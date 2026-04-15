@@ -50,6 +50,14 @@ function HomePage() {
         itemRoutePrefix="earphone"
         buyRoute="/buyEarphone"
       />
+
+      <ProductList
+        title="Phụ kiện & Tiện ích Apple"
+        apiEndpoint="accessories"
+        productType="Accessory"
+        itemRoutePrefix="accessory"
+        buyRoute="/buyAccessory"
+      />
     </React.Fragment>
   );
 }
