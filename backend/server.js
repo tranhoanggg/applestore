@@ -920,161 +920,158 @@ app.post("/cart/pay", (req, res) => {
     Accessory: "accessory",
   };
 
-  db.beginTransaction((err) => {
+  db.getConnection((err, connection) => {
     if (err) {
-      console.error("Begin transaction error", err);
-      return res.status(500).json({ success: false });
+      console.error("Lỗi lấy connection từ pool:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Lỗi kết nối cơ sở dữ liệu" });
     }
 
-    /* ===== 1. INSERT BILL ===== */
-    const insertBillSql = `
-      INSERT INTO bill (
-        user_id,
-        name,
-        phone,
-        product_type,
-        color,
-        capacity,
-        ram,
-        rom,
-        address_detail,
-        commune,
-        district,
-        city,
-        date,
-        payment_method,
-        bank,
-        payment_status
-      )
-      VALUES (?, ?, ?, '', '', '', '', '', ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+    connection.beginTransaction((err) => {
+      if (err) {
+        connection.release();
+        console.error("Begin transaction error", err);
+        return res.status(500).json({ success: false });
+      }
 
-    db.query(
-      insertBillSql,
-      [
-        user_id,
-        name,
-        phone,
-        address_detail,
-        commune,
-        district,
-        city,
-        date,
-        payment_method,
-        bank,
-        payment_status,
-      ],
-      (err, billResult) => {
-        if (err) {
-          return db.rollback(() => {
-            console.error("Insert bill error", err);
-            res.status(500).json({ success: false });
-          });
-        }
+      /* ===== 1. INSERT BILL ===== */
+      const insertBillSql = `
+        INSERT INTO bill (
+          user_id, name, phone, product_type, color, capacity, ram, rom,
+          address_detail, commune, district, city, date, payment_method, bank, payment_status
+        )
+        VALUES (?, ?, ?, '', '', '', '', '', ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
 
-        const bill_id = billResult.insertId;
-
-        /* ===== 2. TRỪ KHO TỪNG SẢN PHẨM ===== */
-        const deductStock = (index = 0) => {
-          if (index >= cartItems.length) {
-            return insertBillDetail();
-          }
-
-          const item = cartItems[index];
-          const table = TABLE_MAP[item.type];
-
-          if (!table) {
-            return db.rollback(() => {
-              res.status(400).json({
-                success: false,
-                message: "Loại sản phẩm không hợp lệ",
-              });
+      connection.query(
+        insertBillSql,
+        [
+          user_id,
+          name,
+          phone,
+          address_detail,
+          commune,
+          district,
+          city,
+          date,
+          payment_method,
+          bank,
+          payment_status,
+        ],
+        (err, billResult) => {
+          if (err) {
+            return connection.rollback(() => {
+              connection.release();
+              console.error("Insert bill error", err);
+              res.status(500).json({ success: false, message: err.message });
             });
           }
 
-          const updateStockSql = `
-            UPDATE ${table}
-            SET quantity = quantity - ?
-            WHERE id = ? AND quantity >= ?
-          `;
+          const bill_id = billResult.insertId;
 
-          db.query(
-            updateStockSql,
-            [item.quantity, item.product_id, item.quantity],
-            (err, result) => {
-              if (err || result.affectedRows === 0) {
-                return db.rollback(() => {
-                  res.status(400).json({
-                    success: false,
-                    message: "Sản phẩm không đủ hàng",
+          /* ===== 2. TRỪ KHO TỪNG SẢN PHẨM ===== */
+          const deductStock = (index = 0) => {
+            if (index >= cartItems.length) {
+              return insertBillDetail();
+            }
+
+            const item = cartItems[index];
+            const table = TABLE_MAP[item.type];
+
+            if (!table) {
+              return connection.rollback(() => {
+                connection.release();
+                res.status(400).json({
+                  success: false,
+                  message: "Loại sản phẩm không hợp lệ",
+                });
+              });
+            }
+
+            const updateStockSql = `
+              UPDATE ${table}
+              SET quantity = quantity - ?
+              WHERE id = ? AND quantity >= ?
+            `;
+
+            connection.query(
+              updateStockSql,
+              [item.quantity, item.product_id, item.quantity],
+              (err, result) => {
+                if (err || result.affectedRows === 0) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    res.status(400).json({
+                      success: false,
+                      message: "Sản phẩm không đủ hàng",
+                    });
                   });
+                }
+                deductStock(index + 1);
+              },
+            );
+          };
+
+          /* ===== 3. INSERT BILL_DETAIL ===== */
+          const insertBillDetail = () => {
+            const insertDetailSql = `INSERT INTO bill_detail (bill_id, product_id, quantity, type) VALUES ?`;
+            const values = cartItems.map((item) => [
+              bill_id,
+              item.product_id,
+              item.quantity,
+              item.type,
+            ]);
+
+            connection.query(insertDetailSql, [values], (err) => {
+              if (err) {
+                return connection.rollback(() => {
+                  connection.release();
+                  console.error("Insert bill_detail error", err);
+                  res.status(500).json({ success: false });
                 });
               }
-
-              deductStock(index + 1);
-            },
-          );
-        };
-
-        /* ===== 3. INSERT BILL_DETAIL ===== */
-        const insertBillDetail = () => {
-          const insertDetailSql = `
-            INSERT INTO bill_detail (bill_id, product_id, quantity, type)
-            VALUES ?
-          `;
-
-          const values = cartItems.map((item) => [
-            bill_id,
-            item.product_id,
-            item.quantity,
-            item.type,
-          ]);
-
-          db.query(insertDetailSql, [values], (err) => {
-            if (err) {
-              return db.rollback(() => {
-                console.error("Insert bill_detail error", err);
-                res.status(500).json({ success: false });
-              });
-            }
-
-            deleteCart();
-          });
-        };
-
-        /* ===== 4. DELETE CART ===== */
-        const deleteCart = () => {
-          db.query("DELETE FROM cart WHERE user_id = ?", [user_id], (err) => {
-            if (err) {
-              return db.rollback(() => {
-                console.error("Delete cart error", err);
-                res.status(500).json({ success: false });
-              });
-            }
-            commitTransaction();
-          });
-        };
-
-        /* ===== 5. COMMIT ===== */
-        const commitTransaction = () => {
-          db.commit((err) => {
-            if (err) {
-              return db.rollback(() => {
-                console.error("Commit error", err);
-                res.status(500).json({ success: false });
-              });
-            }
-
-            res.json({
-              success: true,
-              bill_id,
+              deleteCart();
             });
-          });
-        };
+          };
 
-        deductStock(); // START
-      },
-    );
+          /* ===== 4. DELETE CART ===== */
+          const deleteCart = () => {
+            connection.query(
+              "DELETE FROM cart WHERE user_id = ?",
+              [user_id],
+              (err) => {
+                if (err) {
+                  return connection.rollback(() => {
+                    connection.release();
+                    console.error("Delete cart error", err);
+                    res.status(500).json({ success: false });
+                  });
+                }
+                commitTransaction();
+              },
+            );
+          };
+
+          /* ===== 5. COMMIT ===== */
+          const commitTransaction = () => {
+            connection.commit((err) => {
+              if (err) {
+                return connection.rollback(() => {
+                  connection.release();
+                  console.error("Commit error", err);
+                  res.status(500).json({ success: false });
+                });
+              }
+              connection.release();
+              res.json({ success: true, bill_id });
+            });
+          };
+
+          deductStock(); // START QUY TRÌNH
+        },
+      );
+    });
   });
 });
 
@@ -1351,7 +1348,7 @@ app.put("/bill/cancel/:billId", async (req, res) => {
 
 app.post("/bill/re-order", (req, res) => {
   const {
-    old_bill_id, // ID của đơn hàng cũ cần xoá để tạo lại
+    old_bill_id,
     user_id,
     name,
     phone,
@@ -1366,12 +1363,10 @@ app.post("/bill/re-order", (req, res) => {
     cartItems,
   } = req.body;
 
-  // Validate dữ liệu đầu vào
   if (!user_id || !cartItems?.length || !old_bill_id) {
-    return res.status(400).json({
-      success: false,
-      message: "Thiếu dữ liệu mua lại (Cần old_bill_id, user_id, items)",
-    });
+    return res
+      .status(400)
+      .json({ success: false, message: "Thiếu dữ liệu mua lại" });
   }
 
   const TABLE_MAP = {
@@ -1383,166 +1378,167 @@ app.post("/bill/re-order", (req, res) => {
     Accessory: "accessory",
   };
 
-  db.beginTransaction((err) => {
-    if (err) {
-      console.error("Begin transaction error", err);
-      return res.status(500).json({ success: false });
-    }
+  db.getConnection((err, connection) => {
+    if (err)
+      return res
+        .status(500)
+        .json({ success: false, message: "Lỗi kết nối DB" });
 
-    /* ===== 1. XOÁ BILL DETAIL CŨ ===== */
-    const deleteOldBillDetailSql = "DELETE FROM bill_detail WHERE bill_id = ?";
-    db.query(deleteOldBillDetailSql, [old_bill_id], (err) => {
+    connection.beginTransaction((err) => {
       if (err) {
-        return db.rollback(() => {
-          console.error("Error deleting old bill_detail", err);
-          res
-            .status(500)
-            .json({ success: false, message: "Lỗi xoá chi tiết đơn cũ" });
-        });
+        connection.release();
+        return res.status(500).json({ success: false });
       }
 
-      /* ===== 2. XOÁ BILL CŨ ===== */
-      const deleteOldBillSql = "DELETE FROM bill WHERE id = ?";
-      db.query(deleteOldBillSql, [old_bill_id], (err) => {
-        if (err) {
-          return db.rollback(() => {
-            console.error("Error deleting old bill", err);
-            res.status(500).json({ success: false, message: "Lỗi xoá đơn cũ" });
-          });
-        }
-
-        // Sau khi xoá xong đơn cũ, tiến hành quy trình tạo đơn mới
-        createNewBill();
-      });
-    });
-
-    /* ===== HÀM TẠO ĐƠN MỚI (Tương tự logic pay cũ) ===== */
-    const createNewBill = () => {
-      const insertBillSql = `
-        INSERT INTO bill (
-          user_id, name, phone, product_type, color, capacity, ram, rom,
-          address_detail, commune, district, city, date,
-          payment_method, bank, payment_status
-        )
-        VALUES (?, ?, ?, '', '', '', '', '', ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-
-      db.query(
-        insertBillSql,
-        [
-          user_id,
-          name,
-          phone,
-          address_detail,
-          commune,
-          district,
-          city,
-          date,
-          payment_method,
-          bank,
-          payment_status,
-        ],
-        (err, billResult) => {
+      /* ===== 1. XOÁ BILL DETAIL CŨ ===== */
+      connection.query(
+        "DELETE FROM bill_detail WHERE bill_id = ?",
+        [old_bill_id],
+        (err) => {
           if (err) {
-            return db.rollback(() => {
-              console.error("Insert new bill error", err);
-              res.status(500).json({ success: false });
+            return connection.rollback(() => {
+              connection.release();
+              res
+                .status(500)
+                .json({ success: false, message: "Lỗi xoá chi tiết đơn cũ" });
             });
           }
 
-          const new_bill_id = billResult.insertId;
-
-          /* ===== 3. TRỪ KHO (Giữ nguyên logic cũ) ===== */
-          const deductStock = (index = 0) => {
-            if (index >= cartItems.length) {
-              return insertBillDetail(new_bill_id);
-            }
-
-            const item = cartItems[index];
-            const table = TABLE_MAP[item.type];
-
-            if (!table) {
-              return db.rollback(() => {
-                res.status(400).json({
-                  success: false,
-                  message: `Loại sản phẩm không hợp lệ: ${item.type}`,
+          /* ===== 2. XOÁ BILL CŨ ===== */
+          connection.query(
+            "DELETE FROM bill WHERE id = ?",
+            [old_bill_id],
+            (err) => {
+              if (err) {
+                return connection.rollback(() => {
+                  connection.release();
+                  res
+                    .status(500)
+                    .json({ success: false, message: "Lỗi xoá đơn cũ" });
                 });
+              }
+              createNewBill(); // Tạo đơn mới
+            },
+          );
+        },
+      );
+
+      /* ===== HÀM TẠO ĐƠN MỚI ===== */
+      const createNewBill = () => {
+        const insertBillSql = `
+          INSERT INTO bill (
+            user_id, name, phone, product_type, color, capacity, ram, rom,
+            address_detail, commune, district, city, date, payment_method, bank, payment_status
+          ) VALUES (?, ?, ?, '', '', '', '', '', ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        connection.query(
+          insertBillSql,
+          [
+            user_id,
+            name,
+            phone,
+            address_detail,
+            commune,
+            district,
+            city,
+            date,
+            payment_method,
+            bank,
+            payment_status,
+          ],
+          (err, billResult) => {
+            if (err) {
+              return connection.rollback(() => {
+                connection.release();
+                res.status(500).json({ success: false });
               });
             }
 
-            const updateStockSql = `
-              UPDATE ${table}
-              SET quantity = quantity - ?
-              WHERE id = ? AND quantity >= ?
-            `;
+            const new_bill_id = billResult.insertId;
 
-            db.query(
-              updateStockSql,
-              [item.quantity, item.product_id, item.quantity],
-              (err, result) => {
-                if (err || result.affectedRows === 0) {
-                  return db.rollback(() => {
-                    res.status(400).json({
-                      success: false,
-                      message: `Sản phẩm ${item.product_id} (${item.type}) không đủ hàng`,
-                    });
+            /* ===== 3. TRỪ KHO ===== */
+            const deductStock = (index = 0) => {
+              if (index >= cartItems.length)
+                return insertBillDetail(new_bill_id);
+
+              const item = cartItems[index];
+              const table = TABLE_MAP[item.type];
+
+              if (!table) {
+                return connection.rollback(() => {
+                  connection.release();
+                  res.status(400).json({
+                    success: false,
+                    message: `Loại sản phẩm không hợp lệ: ${item.type}`,
                   });
-                }
-                deductStock(index + 1);
-              },
-            );
-          };
-
-          /* ===== 4. INSERT BILL DETAIL MỚI ===== */
-          const insertBillDetail = (billId) => {
-            const insertDetailSql = `
-              INSERT INTO bill_detail (bill_id, product_id, quantity, type)
-              VALUES ?
-            `;
-
-            const values = cartItems.map((item) => [
-              billId,
-              item.product_id,
-              item.quantity,
-              item.type,
-            ]);
-
-            db.query(insertDetailSql, [values], (err) => {
-              if (err) {
-                return db.rollback(() => {
-                  console.error("Insert bill_detail error", err);
-                  res.status(500).json({ success: false });
                 });
               }
 
-              // KHÔNG GỌI deleteCart() Ở ĐÂY
-              commitTransaction(billId);
+              connection.query(
+                `UPDATE ${table} SET quantity = quantity - ? WHERE id = ? AND quantity >= ?`,
+                [item.quantity, item.product_id, item.quantity],
+                (err, result) => {
+                  if (err || result.affectedRows === 0) {
+                    return connection.rollback(() => {
+                      connection.release();
+                      res.status(400).json({
+                        success: false,
+                        message: `Sản phẩm không đủ hàng`,
+                      });
+                    });
+                  }
+                  deductStock(index + 1);
+                },
+              );
+            };
+
+            /* ===== 4. INSERT BILL DETAIL MỚI ===== */
+            const insertBillDetail = (billId) => {
+              const values = cartItems.map((item) => [
+                billId,
+                item.product_id,
+                item.quantity,
+                item.type,
+              ]);
+              connection.query(
+                `INSERT INTO bill_detail (bill_id, product_id, quantity, type) VALUES ?`,
+                [values],
+                (err) => {
+                  if (err) {
+                    return connection.rollback(() => {
+                      connection.release();
+                      res.status(500).json({ success: false });
+                    });
+                  }
+                  commitTransaction(billId);
+                },
+              );
+            };
+
+            deductStock();
+          },
+        );
+      };
+
+      /* ===== 5. COMMIT ===== */
+      const commitTransaction = (finalBillId) => {
+        connection.commit((err) => {
+          if (err) {
+            return connection.rollback(() => {
+              connection.release();
+              res.status(500).json({ success: false });
             });
-          };
-
-          // Bắt đầu trừ kho
-          deductStock();
-        },
-      );
-    };
-
-    /* ===== 5. COMMIT ===== */
-    const commitTransaction = (finalBillId) => {
-      db.commit((err) => {
-        if (err) {
-          return db.rollback(() => {
-            console.error("Commit error", err);
-            res.status(500).json({ success: false });
+          }
+          connection.release();
+          res.json({
+            success: true,
+            message: "Mua lại thành công",
+            bill_id: finalBillId,
           });
-        }
-
-        res.json({
-          success: true,
-          message: "Mua lại thành công (đã thay thế đơn cũ)",
-          bill_id: finalBillId,
         });
-      });
-    };
+      };
+    });
   });
 });
 

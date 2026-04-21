@@ -151,6 +151,8 @@ const Navbar = () => {
                 onClick={(e) => {
                   if (item === "Tai nghe") {
                     navigate("/earphone");
+                  } else if (item === "Phụ kiện") {
+                    navigate("/accessory");
                   } else {
                     navigate(`/${item.toLowerCase()}`);
                   }

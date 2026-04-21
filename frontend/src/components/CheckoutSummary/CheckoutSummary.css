@@ -7,7 +7,9 @@
 .page-enter-active {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 1s ease, transform 1s ease;
+  transition:
+    opacity 1s ease,
+    transform 1s ease;
 }
 
 .checkout-content {
@@ -252,6 +254,7 @@
 .checkout.qr-image {
   width: 200px;
   margin-top: 10px;
+  cursor: default;
 }
 
 .checkout.qr-info {
